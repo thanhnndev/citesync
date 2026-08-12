@@ -1,8 +1,23 @@
 /**
- * @citesync/document-model — placeholder barrel.
+ * @citesync/document-model — public barrel.
  *
- * The PRD §15 contract types (AcademicDocument, DocumentBlock,
- * SourceLocation, DocumentMetadata, SourceMap) are added in S01-T2.
- * Kept as a minimal module stub so the workspace compiles end-to-end.
+ * Re-exports the PRD §15 internal document model contract (see `types.ts`).
+ * Every export is type-only (interfaces/type aliases are erased at runtime);
+ * downstream packages import with `import type { ... } from
+ * '@citesync/document-model'`.
  */
-export {};
+export type {
+  AcademicDocument,
+  AuthorDateCitationItem,
+  BibliographySection,
+  BlockSourceMap,
+  CitationItem,
+  CitationOccurrence,
+  DocumentBlock,
+  DocumentBlockType,
+  DocumentMetadata,
+  NumericCitationItem,
+  RunSpan,
+  SourceLocation,
+  SourceMap,
+} from './types.js';
