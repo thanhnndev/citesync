@@ -1,0 +1,155 @@
+{
+  "metadata": {
+    "title": "Minimal golden fixture",
+    "author": "CiteSync Fixtures",
+    "created": "2024-01-15T10:30:00Z",
+    "modified": "2024-02-20T08:00:00Z"
+  },
+  "blocks": [
+    {
+      "id": "doc-p0",
+      "type": "heading",
+      "text": "Introduction",
+      "source": {
+        "blockId": "doc-p0",
+        "paragraphIndex": 0,
+        "startOffset": 0,
+        "endOffset": 12
+      },
+      "style": "Heading1"
+    },
+    {
+      "id": "doc-p1",
+      "type": "paragraph",
+      "text": "Smith (2024) proposed a theory",
+      "source": {
+        "blockId": "doc-p1",
+        "paragraphIndex": 1,
+        "startOffset": 0,
+        "endOffset": 30
+      }
+    },
+    {
+      "id": "doc-p2",
+      "type": "paragraph",
+      "text": "Fragmented run text here.",
+      "source": {
+        "blockId": "doc-p2",
+        "paragraphIndex": 2,
+        "startOffset": 0,
+        "endOffset": 25
+      }
+    }
+  ],
+  "citations": [
+    {
+      "id": "c0",
+      "raw": "Smith (2024)",
+      "family": "author-date",
+      "items": [
+        {
+          "firstAuthor": "Smith",
+          "authors": [
+            "Smith"
+          ],
+          "year": 2024
+        }
+      ],
+      "source": {
+        "blockId": "doc-p1",
+        "paragraphIndex": 1,
+        "startOffset": 0,
+        "endOffset": 12
+      },
+      "confidence": 0.9
+    }
+  ],
+  "sourceMap": {
+    "version": 1,
+    "blocks": {
+      "doc-p0": {
+        "blockId": "doc-p0",
+        "paragraphIndex": 0,
+        "runs": [
+          {
+            "runIndex": 0,
+            "text": "Introduction",
+            "startOffset": 0,
+            "endOffset": 12
+          }
+        ]
+      },
+      "doc-p1": {
+        "blockId": "doc-p1",
+        "paragraphIndex": 1,
+        "runs": [
+          {
+            "runIndex": 0,
+            "text": "Smith (2024) proposed a theory",
+            "startOffset": 0,
+            "endOffset": 30
+          }
+        ]
+      },
+      "doc-p2": {
+        "blockId": "doc-p2",
+        "paragraphIndex": 2,
+        "runs": [
+          {
+            "runIndex": 0,
+            "text": "Fragmented ",
+            "startOffset": 0,
+            "endOffset": 11
+          },
+          {
+            "runIndex": 1,
+            "text": "run text ",
+            "startOffset": 11,
+            "endOffset": 20
+          },
+          {
+            "runIndex": 2,
+            "text": "here.",
+            "startOffset": 20,
+            "endOffset": 25
+          }
+        ]
+      }
+    }
+  },
+  "bibliography": {
+    "outcome": "below-threshold",
+    "confidence": 0.15,
+    "candidates": [
+      {
+        "blockId": "doc-p0",
+        "heading": "Introduction",
+        "headingType": "style",
+        "startIndex": 0,
+        "confidence": 0.15
+      }
+    ]
+  },
+  "matchMap": {
+    "version": 1,
+    "citations": [
+      {
+        "citationId": "c0",
+        "citationSource": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 1,
+          "startOffset": 0,
+          "endOffset": 12
+        },
+        "relationship": "MISSING_REFERENCE",
+        "score": 0,
+        "tier": 5,
+        "confidence": 0,
+        "reasons": [
+          "no-entry"
+        ]
+      }
+    ],
+    "entryStatus": []
+  }
+}
