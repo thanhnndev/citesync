@@ -36,7 +36,7 @@ import { fileURLToPath } from 'node:url';
 
 import { deflateSync, unzipSync, zipSync } from 'fflate';
 
-import { KNOWN_OCCURRENCES } from './fixture-ground-truth.js';
+import { KNOWN_OCCURRENCES, KNOWN_MATCHES } from './fixture-ground-truth.js';
 import { KNOWN_REFERENCES } from './fixture-ground-truth-references.js';
 
 const MIB = 1024 * 1024;
@@ -711,6 +711,68 @@ const PACKAGE_FIXTURES: DocxSpec[] = [
       { runs: [t('Doe, J. (2021). Advances in digital citation analysis. Journal of Citation Science, 12(4), 100-115.')] },
     ],
   },
+
+  // S04-T2: AMBIGUOUS proof — one citation, TWO bibliography entries whose
+  // author AND year both match (two distinct Smith, J. 2020 works). Per §27/§31
+  // (CS004) the engine MUST NOT auto-pick: both candidates score identically
+  // (1.0 for the bare "(Smith, 2020)", 0.925 for the "Smith, J. (2020)" entry
+  // tails) → AMBIGUOUS with no matchedEntryId. The bibliography-side statuses
+  // become AMBIGUOUS_USAGE for both entries.
+  {
+    name: 'match/ambiguous-same-author-year.docx',
+    title: 'Ambiguous — same author, same year, two works',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Literature Review')] },
+      { runs: [t('Smith (2020) appears in two separate works with identical authorship and year.')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('Smith, J. (2020). First book on citation analysis. Journal of Citation Science, 1(1), 1-10.')] },
+      { runs: [t('Smith, J. (2020). Second book on citation analysis. Journal of Citation Science, 1(2), 11-20.')] },
+    ],
+  },
+
+  // S04-T2: POSSIBLE_MISMATCH proof (author near-miss) — citation "Smith, J."
+  // vs an entry "Smith, P." (same surname, CONTRADICTING given initial, same
+  // year). The T2 given-initial guard (§25/§79) zeroes the first-author credit
+  // so the pairing scores 0.525 — inside the POSSIBLE_MISMATCH band, never a
+  // confident MATCHED (different people, §79 false-positive class). The entry
+  // tails themselves match their own entries (0.925 each).
+  {
+    name: 'match/near-miss-author.docx',
+    title: 'Near miss — same surname, contradicting given initial',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Literature Review')] },
+      { runs: [t('Smith, J. (2019) analyzed citation persistence across repositories.')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('Smith, P. (2019). Citation persistence in digital repositories. Journal of Citation Science, 5(2), 30-44.')] },
+      { runs: [t('Roe, M. (2017). Repository archiving practices. ACM Computing Surveys, 49(1), 1-18.')] },
+    ],
+  },
+
+  // S04-T2: Vietnamese near-miss pair — exercises the §25 diacritic-INSENSITIVE
+  // tier WITHOUT collapsing Đ/đ (MEM002/MEM037): the "Nguyễn, V. A." citation
+  // reaches the tier-3 candidate signal against the "Nguyen, V. A." entry
+  // (score 0.845 ≥ MATCH_THRESHOLD — MATCHED, but REPORTED as tier 3
+  // diacritic-insensitive, never silently promoted to exact); the separate
+  // "Đỗ" citation vs the "Do, Q." entry stays DISTINCT (Đ/đ survive
+  // stripping — tier 5, score 0.6 → POSSIBLE_MISMATCH, never MATCHED).
+  {
+    name: 'match/near-miss-vietnamese.docx',
+    title: 'Tiếng Việt — near-miss qua tầng diacritic-insensitive (Nguyễn/Nguyen, Đỗ/Do distinct)',
+    creator: 'Nguyễn Văn A',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Tổng quan')] },
+      { runs: [t('Theo Nguyễn, V. A. (2015), việc trích dẫn cần được xử lý một cách tự động.')] },
+      { runs: [t('Đỗ (2018) chỉ ra rằng các ký tự có dấu cần được phân biệt trong đối sánh.')] },
+      { heading: true, runs: [t('Danh mục tài liệu tham khảo')] },
+      { runs: [t('Nguyen, V. A. (2015). Phương pháp trích dẫn tự động trong văn bản khoa học. Nhà xuất bản Đại học Quốc gia Hà Nội.')] },
+      { runs: [t('Do, Q. (2018). Cấu trúc dữ liệu trích dẫn có dấu. Tạp chí Khoa học và Công nghệ, 10(1), 5-15.')] },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1016,6 +1078,28 @@ function renderGroundTruth(): string[] {
     }
     lines.push('');
   }
+  for (const [name, map] of Object.entries(KNOWN_MATCHES)) {
+    lines.push(`### ${name} (match states)`);
+    lines.push('');
+    if (map.citations.length === 0) {
+      lines.push('_no citations — empty match map_');
+      lines.push('');
+      continue;
+    }
+    for (const r of map.citations) {
+      lines.push(
+        `- \`${r.citationId}\` → ${r.relationship}` +
+          `${r.matchedEntryId !== undefined ? ` → \`${r.matchedEntryId}\`` : ''} ` +
+          `score ${r.score} tier ${r.tier} conf ${r.confidence} reasons=[${r.reasons.join(',')}]`,
+      );
+    }
+    if (map.entryStatus.length > 0) {
+      lines.push(
+        `- entries → ${map.entryStatus.map((s) => `${s.entryId}:${s.status}`).join(' | ')}`,
+      );
+    }
+    lines.push('');
+  }
   return lines;
 }
 
@@ -1165,6 +1249,9 @@ function main(): void {
     '| fixture | purpose |',
     '|---------|---------|',
     '| `match/same-author-two-years.docx` | same author, two years: a `Doe (2018)` citation matches the 2018 entry (score 1.0) but scores 0.6 (< MATCH_THRESHOLD 0.7) against the 2021 entry — a wrong-year pairing can never be MATCHED (§79) |',
+    '| `match/ambiguous-same-author-year.docx` | one citation, TWO entries sharing author AND year (two distinct Smith, J. 2020 works) -> AMBIGUOUS, never auto-pick (§27/§31 CS004) |',
+    '| `match/near-miss-author.docx` | citation `Smith, J. (2019)` vs entry `Smith, P. (2019)` — same surname, CONTRADICTING given initial -> POSSIBLE_MISMATCH (0.525), never a confident MATCHED (§79) |',
+    '| `match/near-miss-vietnamese.docx` | Nguyễn/Nguyen reaches the §25 diacritic-insensitive tier-3 signal (0.845, reported — never promoted over exact) while Đỗ/Do stays DISTINCT (tier 5, 0.6 -> POSSIBLE_MISMATCH, §24/MEM037) |',
     '',
     '## Security samples',
     '',

@@ -506,6 +506,14 @@ export type MatchReason =
   | 'initials'
   /** Author matched only on the fuzzy tier (§25 tier 5 — no stored key). */
   | 'fuzzy'
+  /**
+   * Citation first-author given-name initials CONTRADICT the entry's given
+   * name (same family, disagreeing given evidence — e.g. "Smith, J." vs
+   * "Smith, P."). A near-miss signal (S04-T2): the first-author credit is
+   * zeroed so the pairing can never become a confident MATCHED (§79). A bare
+   * surname citation ("Smith") carries no given evidence and never fires.
+   */
+  | 'given-initial-mismatch'
   /** Citation year equals entry year. */
   | 'year-match'
   /** Years present and different, or the same year with conflicting suffixes. */

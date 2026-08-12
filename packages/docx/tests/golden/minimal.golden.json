@@ -129,5 +129,27 @@
         "confidence": 0.15
       }
     ]
+  },
+  "matchMap": {
+    "version": 1,
+    "citations": [
+      {
+        "citationId": "c0",
+        "citationSource": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 1,
+          "startOffset": 0,
+          "endOffset": 12
+        },
+        "relationship": "MISSING_REFERENCE",
+        "score": 0,
+        "tier": 5,
+        "confidence": 0,
+        "reasons": [
+          "no-entry"
+        ]
+      }
+    ],
+    "entryStatus": []
   }
 }

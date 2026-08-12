@@ -59,6 +59,7 @@ import { noteToBlock, scanNotePart } from './parser/footnotes.js';
 import { loadStyleMap } from './parser/style.js';
 import { detectBibliography } from './bibliography/detect.js';
 import { extractCitations, parseReferences } from './extract.js';
+import { buildMatchMap } from './match/index.js';
 
 const PART_DOCUMENT = 'word/document.xml';
 const PART_STYLES = 'word/styles.xml';
@@ -162,6 +163,18 @@ export function buildModel(parts: ZipParts): AcademicDocument {
   doc.citations = extractCitations(doc);
   if (parseIssues.length > 0) doc.parseIssues = parseIssues;
   if (security !== undefined) doc.security = security;
+  // S04 (T2): fill the §27 match-state map LAST — after `citations` and
+  // `bibliography.entries` are both populated by the extraction tail above.
+  // The map is meaningful only when there is something to match: at least one
+  // citation occurrence OR a detected bibliography with parsed entries
+  // (entries present with zero citations still yields the bibliography-side
+  // UNUSED rows). Pure + deterministic (R008): same bytes → same map.
+  if (
+    doc.citations.length > 0 ||
+    (doc.bibliography?.entries?.length ?? 0) > 0
+  ) {
+    doc.matchMap = buildMatchMap(doc);
+  }
   return doc;
 }
 

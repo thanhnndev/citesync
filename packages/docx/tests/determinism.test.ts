@@ -59,6 +59,10 @@ const EXPECTED_BIBLIOGRAPHY: Record<string, 'detected' | 'below-threshold' | 'ab
   'bibliography/style-position.docx': 'detected',
   'bibliography/no-bibliography.docx': 'absent',
   'bibliography/ambiguous.docx': 'below-threshold',
+  'match/same-author-two-years.docx': 'detected',
+  'match/ambiguous-same-author-year.docx': 'detected',
+  'match/near-miss-author.docx': 'detected',
+  'match/near-miss-vietnamese.docx': 'detected',
   'security/vba-sample.docx': 'below-threshold',
 };
 
@@ -80,6 +84,10 @@ const VALID_FIXTURES = [
   'bibliography/style-position.docx',
   'bibliography/no-bibliography.docx',
   'bibliography/ambiguous.docx',
+  'match/same-author-two-years.docx',
+  'match/ambiguous-same-author-year.docx',
+  'match/near-miss-author.docx',
+  'match/near-miss-vietnamese.docx',
   'security/vba-sample.docx',
 ];
 

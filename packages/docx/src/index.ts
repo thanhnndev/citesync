@@ -126,8 +126,8 @@ export type { ReferenceFeatures } from './references/index.js';
 export { detectBibliography, BIBLIOGRAPHY_THRESHOLD } from './bibliography/detect.js';
 
 // S04 (T1): §26 tunable weights + §27/§79 thresholds + the §25 tier-ladder /
-// §26 weighted per-citation×per-entry scorer (the match-map orchestration
-// `buildMatchMap` lands in S04-T2).
+// §26 weighted per-citation×per-entry scorer (T2 adds the §27 match-map
+// orchestration `buildMatchMap`).
 export {
   MATCH_WEIGHTS,
   MATCH_THRESHOLD,
@@ -137,6 +137,7 @@ export {
 export type { MatchWeights } from './match/index.js';
 export { scoreCitationAgainstEntry, AUTHOR_TIER } from './match/index.js';
 export type { CitationScore } from './match/index.js';
+export { buildMatchMap } from './match/index.js';
 
 // The shared §15 model contract (re-exported for one-import convenience).
 export type {

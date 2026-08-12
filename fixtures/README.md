@@ -50,6 +50,9 @@ Re-running the script rewrites byte-identical files.
 | fixture | purpose |
 |---------|---------|
 | `match/same-author-two-years.docx` | same author, two years: a `Doe (2018)` citation matches the 2018 entry (score 1.0) but scores 0.6 (< MATCH_THRESHOLD 0.7) against the 2021 entry — a wrong-year pairing can never be MATCHED (§79) |
+| `match/ambiguous-same-author-year.docx` | one citation, TWO entries sharing author AND year (two distinct Smith, J. 2020 works) -> AMBIGUOUS, never auto-pick (§27/§31 CS004) |
+| `match/near-miss-author.docx` | citation `Smith, J. (2019)` vs entry `Smith, P. (2019)` — same surname, CONTRADICTING given initial -> POSSIBLE_MISMATCH (0.525), never a confident MATCHED (§79) |
+| `match/near-miss-vietnamese.docx` | Nguyễn/Nguyen reaches the §25 diacritic-insensitive tier-3 signal (0.845, reported — never promoted over exact) while Đỗ/Do stays DISTINCT (tier 5, 0.6 -> POSSIBLE_MISMATCH, §24/MEM037) |
 
 ## Security samples
 
@@ -176,6 +179,25 @@ bytes, the model shape, the grammar or the normalization drifts these tables).
 - `c2` `Doe, J. (2018)` @ `doc-p4[0,14)` author-date conf 0.837 → {"firstAuthor":"Doe","authors":["Doe","J."],"year":2018}
 - `c3` `Doe, J. (2021)` @ `doc-p5[0,14)` author-date conf 0.837 → {"firstAuthor":"Doe","authors":["Doe","J."],"year":2021}
 
+### match/ambiguous-same-author-year.docx
+
+- `c0` `Smith (2020)` @ `doc-p1[0,12)` author-date conf 0.9 → {"firstAuthor":"Smith","authors":["Smith"],"year":2020}
+- `c1` `Smith, J. (2020)` @ `doc-p3[0,16)` author-date conf 0.837 → {"firstAuthor":"Smith","authors":["Smith","J."],"year":2020}
+- `c2` `Smith, J. (2020)` @ `doc-p4[0,16)` author-date conf 0.837 → {"firstAuthor":"Smith","authors":["Smith","J."],"year":2020}
+
+### match/near-miss-author.docx
+
+- `c0` `Smith, J. (2019)` @ `doc-p1[0,16)` author-date conf 0.837 → {"firstAuthor":"Smith","authors":["Smith","J."],"year":2019}
+- `c1` `Smith, P. (2019)` @ `doc-p3[0,16)` author-date conf 0.837 → {"firstAuthor":"Smith","authors":["Smith","P."],"year":2019}
+- `c2` `Roe, M. (2017)` @ `doc-p4[0,14)` author-date conf 0.837 → {"firstAuthor":"Roe","authors":["Roe","M."],"year":2017}
+
+### match/near-miss-vietnamese.docx
+
+- `c0` `Nguyễn, V. A. (2015)` @ `doc-p1[5,25)` author-date conf 0.837 → {"firstAuthor":"Nguyễn","authors":["Nguyễn","V. A."],"year":2015}
+- `c1` `Đỗ (2018)` @ `doc-p2[0,9)` author-date conf 0.9 → {"firstAuthor":"Đỗ","authors":["Đỗ"],"year":2018}
+- `c2` `Nguyen, V. A. (2015)` @ `doc-p4[0,20)` author-date conf 0.837 → {"firstAuthor":"Nguyen","authors":["Nguyen","V. A."],"year":2015}
+- `c3` `Do, Q. (2018)` @ `doc-p5[0,13)` author-date conf 0.837 → {"firstAuthor":"Do","authors":["Do","Q."],"year":2018}
+
 ### security/vba-sample.docx
 
 _no citations_
@@ -206,4 +228,152 @@ _detected section without entry blocks — parsing scope is exactly S02's blockI
 
 - `r0` @ `doc-p4[0,97)` conf 1 → authors=[Doe, J.] year=2018 title="Citation practices in digital archives" container="Journal of Citation Science" identifiers={"volume":"9","issue":"1","pages":"10-22"}
 - `r1` @ `doc-p5[0,99)` conf 1 → authors=[Doe, J.] year=2021 title="Advances in digital citation analysis" container="Journal of Citation Science" identifiers={"volume":"12","issue":"4","pages":"100-115"}
+
+### match/ambiguous-same-author-year.docx (references)
+
+- `r0` @ `doc-p3[0,91)` conf 1 → authors=[Smith, J.] year=2020 title="First book on citation analysis" container="Journal of Citation Science" identifiers={"volume":"1","issue":"1","pages":"1-10"}
+- `r1` @ `doc-p4[0,93)` conf 1 → authors=[Smith, J.] year=2020 title="Second book on citation analysis" container="Journal of Citation Science" identifiers={"volume":"1","issue":"2","pages":"11-20"}
+
+### match/near-miss-author.docx (references)
+
+- `r0` @ `doc-p3[0,105)` conf 1 → authors=[Smith, P.] year=2019 title="Citation persistence in digital repositories" container="Journal of Citation Science" identifiers={"volume":"5","issue":"2","pages":"30-44"}
+- `r1` @ `doc-p4[0,83)` conf 1 → authors=[Roe, M.] year=2017 title="Repository archiving practices" container="ACM Computing Surveys" identifiers={"volume":"49","issue":"1","pages":"1-18"}
+
+### match/near-miss-vietnamese.docx (references)
+
+- `r0` @ `doc-p4[0,113)` conf 0.9412 → authors=[Nguyen, V. A.] year=2015 title="Phương pháp trích dẫn tự động trong văn bản khoa học" container="Nhà xuất bản Đại học Quốc gia Hà Nội"
+- `r1` @ `doc-p5[0,93)` conf 1 → authors=[Do, Q.] year=2018 title="Cấu trúc dữ liệu trích dẫn có dấu" container="Tạp chí Khoa học và Công nghệ" identifiers={"volume":"10","issue":"1","pages":"5-15"}
+
+### minimal.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### author-date/simple.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c3` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### author-date/et-al.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c3` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### author-date/multiple-authors.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### author-date/same-author-year.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### author-date/missing.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### author-date/ambiguous.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### author-date/vietnamese.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c3` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### documents/docx/apa-like.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c3` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c4` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### documents/docx/harvard.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### documents/docx/plain-text.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### bibliography/no-bibliography.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### bibliography/ambiguous.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+
+### bibliography/en-references.docx (match states)
+
+- `c0` → MATCHED → `r0` score 1 tier 1 conf 1 reasons=[exact,year-match]
+- `c1` → MATCHED → `r1` score 1 tier 1 conf 1 reasons=[exact,year-match]
+- `c2` → MATCHED → `r2` score 1 tier 1 conf 1 reasons=[exact,year-match]
+- `c3` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c4` → MATCHED → `r1` score 1 tier 1 conf 1 reasons=[exact,year-match]
+- `c5` → MATCHED → `r2` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED | r2:CITED
+
+### bibliography/vi-tai-lieu.docx (match states)
+
+- `c0` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c1` → MATCHED → `r1` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c2` → MATCHED → `r2` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED | r2:CITED
+
+### bibliography/style-position.docx (match states)
+
+- `c0` → POSSIBLE_MISMATCH score 0.6 tier 5 conf 0.6 reasons=[author-mismatch,year-match]
+- `c1` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c2` → MATCHED → `r1` score 1 tier 1 conf 1 reasons=[exact,year-match]
+- `c3` → MATCHED → `r2` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED | r2:CITED
+
+### match/same-author-two-years.docx (match states)
+
+- `c0` → MATCHED → `r0` score 1 tier 1 conf 1 reasons=[exact,year-match]
+- `c1` → MATCHED → `r1` score 1 tier 1 conf 1 reasons=[exact,year-match]
+- `c2` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c3` → MATCHED → `r1` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED
+
+### match/ambiguous-same-author-year.docx (match states)
+
+- `c0` → AMBIGUOUS score 1 tier 1 conf 1 reasons=[exact,year-match,ambiguous]
+- `c1` → AMBIGUOUS score 0.925 tier 1 conf 0.925 reasons=[exact,year-match,ambiguous]
+- `c2` → AMBIGUOUS score 0.925 tier 1 conf 0.925 reasons=[exact,year-match,ambiguous]
+- entries → r0:AMBIGUOUS_USAGE | r1:AMBIGUOUS_USAGE
+
+### match/near-miss-author.docx (match states)
+
+- `c0` → POSSIBLE_MISMATCH score 0.525 tier 1 conf 0.525 reasons=[exact,given-initial-mismatch,year-match]
+- `c1` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c2` → MATCHED → `r1` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED
+
+### match/near-miss-vietnamese.docx (match states)
+
+- `c0` → MATCHED → `r0` score 0.845 tier 3 conf 0.845 reasons=[diacritic-insensitive,year-match]
+- `c1` → POSSIBLE_MISMATCH score 0.6 tier 5 conf 0.6 reasons=[author-mismatch,year-match]
+- `c2` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c3` → MATCHED → `r1` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED
+
+### security/vba-sample.docx (match states)
+
+_no citations — empty match map_
 

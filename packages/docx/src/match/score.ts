@@ -118,12 +118,30 @@ export function scoreCitationAgainstEntry(
       ? firstAuthorTier(citationKey, entryFirst)
       : AUTHOR_TIER.NONE;
   const authorExact = tier === AUTHOR_TIER.EXACT;
-  const authorCredit = (AUTHOR_CREDIT[tier] ?? 0) * weights.firstAuthor;
+  let authorCredit = (AUTHOR_CREDIT[tier] ?? 0) * weights.firstAuthor;
   if (tier === AUTHOR_TIER.EXACT) reasons.push('exact');
   else if (tier === AUTHOR_TIER.NORMALIZED) reasons.push('normalized');
   else if (tier === AUTHOR_TIER.DIACRITIC) reasons.push('diacritic-insensitive');
   else if (tier === AUTHOR_TIER.INITIALS) reasons.push('initials');
   else reasons.push('author-mismatch');
+
+  // §25/§79 near-miss guard (S04-T2): when the citation's first-author display
+  // carries given-name initials and the entry's first author has a given name,
+  // a CONTRADICTION (same family initial, disagreeing given initials — e.g.
+  // "Smith, J." vs "Smith, P.") demotes the pairing to a near-miss: the
+  // first-author credit is zeroed and the contradiction is reported. A bare
+  // surname citation ("Smith") carries no given evidence and is never
+  // penalized (the citation legitimately abbreviates); given initials that are
+  // a prefix of the other side's are consistent (an abbreviated entry never
+  // contradicts). Without this guard a same-surname/same-year pair of
+  // DIFFERENT people would score 0.925 and become a confident wrong MATCHED —
+  // the §79 false-positive class the near-miss-author fixture pins. The tier
+  // stays the surname tier reached (the surname DID match); only the credit is
+  // zeroed.
+  if (givenInitialsConflict(citationItem, entryFirst)) {
+    authorCredit = 0;
+    reasons.push('given-initial-mismatch');
+  }
 
   // ---- Year axis (§26 year weight + same-year suffix disambiguation) ----
   // A same-year suffix conflict ("2020a" vs "2020b") means DIFFERENT works:
@@ -273,4 +291,52 @@ function additionalAuthorMatches(
 /** Clamp to [0, 1] (scores are never negative by construction, but defend). */
 function clamp01(x: number): number {
   return Math.min(1, Math.max(0, x));
+}
+
+/**
+ * True when the citation's first-author display and the entry's first author
+ * carry CONTRADICTING given-name initials (same family initial, disagreeing
+ * given evidence — e.g. "Smith, J." vs "Smith, P.").
+ *
+ * Both sides must carry given evidence (initials string length ≥ 2 — a bare
+ * surname key is a single char) and the family initial must agree (otherwise
+ * the surname tiers already differ and this guard has nothing to add). Given
+ * initials that are a prefix of the other side's are consistent: an
+ * abbreviated citation/entry never contradicts a fuller one ("Smith" never
+ * conflicts with "Smith, P. J."; "Smith, J." is consistent with
+ * "Smith, J."). Đ/đ (U+0110/U+0111) survive diacritic stripping, so a Đỗ vs
+ * Do pair never reaches this guard via a false family-initial equality.
+ */
+function givenInitialsConflict(
+  citationItem: AuthorDateCitationItem,
+  entryFirst: PersonName | undefined,
+): boolean {
+  if (entryFirst === undefined || entryFirst.given === undefined) return false;
+  const citationInitials = citationGivenInitials(citationItem);
+  const entryInitials = entryFirst.key.initials;
+  if (citationInitials.length < 2 || entryInitials.length < 2) return false;
+  if (citationInitials[0] !== entryInitials[0]) return false;
+  return !(
+    entryInitials.startsWith(citationInitials) ||
+    citationInitials.startsWith(entryInitials)
+  );
+}
+
+/**
+ * Full-name initial key of the citation's first author (given evidence
+ * included). Reconstructs the display name from the S03 item fields:
+ * "Last, First" items split into `authors = ['Last', 'First']` (firstAuthor
+ * is the family token) — join them back; family-first Vietnamese names keep
+ * the full name in `authors[0]`. The literal "et al." pseudo-author is
+ * stripped (MEM038) and the §25 `initials` tier is built over the result.
+ */
+function citationGivenInitials(citationItem: AuthorDateCitationItem): string {
+  const first = citationItem.firstAuthor ?? '';
+  const authors = citationItem.authors ?? [];
+  const full =
+    authors.length > 1 && authors[0] === first
+      ? `${first} ${authors.slice(1).join(' ')}`
+      : (authors[0] ?? first);
+  const cleaned = full.trim().replace(ET_AL_TAIL_RE, '').trim();
+  return cleaned === '' ? '' : buildNameKey(cleaned).initials;
 }

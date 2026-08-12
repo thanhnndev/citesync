@@ -84,6 +84,9 @@ const KNOWN_CITATIONS: Record<string, string[]> = {
   'bibliography/no-bibliography.docx': ['Smith (2020)', '(Nguyen & Tran, 2021)'],
   'bibliography/ambiguous.docx': ['(Doe, 2017)'],
   'match/same-author-two-years.docx': ['Doe (2018)', '(Doe, 2021)', 'Doe, J. (2018).', 'Doe, J. (2021).'],
+  'match/ambiguous-same-author-year.docx': ['Smith (2020)', 'Smith, J. (2020).', 'Smith, J. (2020).'],
+  'match/near-miss-author.docx': ['Smith, J. (2019)', 'Smith, P. (2019).', 'Roe, M. (2017).'],
+  'match/near-miss-vietnamese.docx': ['Nguyễn, V. A. (2015)', 'Đỗ (2018)', 'Nguyen, V. A. (2015).', 'Do, Q. (2018).'],
   'security/vba-sample.docx': [], // macro carriage text only — no citations
 };
 
@@ -97,10 +100,10 @@ const FIXTURES_WITH_FOOTNOTES = new Set([
 describe('fixture corpus — real .docx files parse end to end', () => {
   it('covers the full committed fixture corpus (manifest drift guard)', () => {
     // Lock the fixture inventory: README.md + minimal(1) + author-date(7) +
-    // documents(3) + bibliography(5) + match(1, S04-T1) + security(6 incl.
-    // not-a-docx.zip + lying-bomb) = 24 files.
-    expect(ALL_FILES).toHaveLength(24);
-    expect(VALID_FIXTURES).toHaveLength(18);
+    // documents(3) + bibliography(5) + match(4, S04-T1/T2) + security(6 incl.
+    // not-a-docx.zip + lying-bomb) = 27 files.
+    expect(ALL_FILES).toHaveLength(27);
+    expect(VALID_FIXTURES).toHaveLength(21);
     expect(BAD_SAMPLES).toHaveLength(5);
   });
 
