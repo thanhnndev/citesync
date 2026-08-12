@@ -1,0 +1,26 @@
+{
+  "name": "@citesync/docx",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bounds-guarded OOXML (DOCX) reader: fflate zip + XML parse into AcademicDocument with byte-faithful source offsets",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fast-xml-parser": "5.10.1",
+    "fflate": "0.8.3"
+  },
+  "license": "UNLICENSED"
+}
