@@ -266,6 +266,9 @@ export function scanWtOffsets(xml: string): SourceScanResult {
         runOffset = 0;
         runIndex = 0;
         paraXmlStart = -1;
+        // Reset so an unterminated FOLLOWING paragraph correctly reports -1
+        // at end of input instead of inheriting this paragraph's end offset.
+        paraXmlEnd = -1;
       }
       i = gt === -1 ? n : gt + 1;
       continue;
@@ -292,12 +295,14 @@ export function scanWtOffsets(xml: string): SourceScanResult {
       openText = false;
       textInnerXmlStart = -1;
       pendingPreserve = false;
+      paraXmlEnd = -1; // fresh region: unterminated-at-EOF stays -1
       if (tag.selfClosing) {
         // Empty `<w:p/>`: record a paragraph with no runs.
         paraXmlEnd = lt + tag.inner.length + 2;
         flush();
         paragraphIndex += 1;
         paraXmlStart = -1;
+        paraXmlEnd = -1;
       }
     } else if (isW(name, 't') && !tag.selfClosing) {
       openText = true;

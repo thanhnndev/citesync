@@ -81,6 +81,13 @@ export interface ParsedParagraph {
   xmlStartOffset: number;
   /** Absolute char index past `>` of `</w:p>`; `-1` when unterminated. */
   xmlEndOffset: number;
+  /**
+   * Field-instruction markers preserved from the runs, one entry per field in
+   * document order (research §5c): the raw `w:instrText` / `w:fldSimple/@w:instr`
+   * codes (e.g. `ADDIN ZOTERO_ITEM CSL_CITATION {...}`), entity-decoded.
+   * S03 uses these to detect Word/Zotero/Mendeley structured-citation fields.
+   */
+  fields: string[];
   /** True when malformed markup was encountered (isolated, never thrown). */
   malformed: boolean;
 }
@@ -106,6 +113,7 @@ export function scanParagraphs(xml: string): ParsedParagraph[] {
       text: w.text,
       runs: w.runs,
       props: w.props,
+      fields: w.fields,
       xmlStartOffset: p.xmlStartOffset,
       xmlEndOffset: p.xmlEndOffset,
       // Unterminated-at-EOF paragraphs are soft malformed: isolated, kept.
@@ -163,6 +171,7 @@ export function paragraphToBlock(
     source,
   };
   if (p.props.styleId !== undefined) block.style = p.props.styleId;
+  if (p.fields.length > 0) block.fields = p.fields;
   return block;
 }
 
@@ -174,6 +183,7 @@ interface RegionWalk {
   text: string;
   runs: RunSpan[];
   props: ParagraphProps;
+  fields: string[];
   malformed: boolean;
 }
 
@@ -189,6 +199,7 @@ interface RegionWalk {
 function walkParagraphRegion(region: string): RegionWalk {
   const props: ParagraphProps = { isList: false };
   const runs: RunSpan[] = [];
+  const fields: string[] = [];
   let text = '';
   let runIndex = 0;
   let offset = 0; // running char offset into `text`
@@ -202,6 +213,27 @@ function walkParagraphRegion(region: string): RegionWalk {
   // Open `<w:t>` accumulation state.
   let openText = false;
   let textStart = -1; // char index just past '>' of the open w:t tag
+
+  // Structured-citation field state (research §5c): `w:instrText` content is
+  // accumulated between a `w:fldChar` begin and its separate/end, then pushed
+  // as one marker into `fields` (entity-decoded). Bare `w:instrText` without a
+  // wrapping field and `w:fldSimple/@w:instr` become their own markers.
+  let openInstrText = false;
+  let instrStart = -1; // char index just past '>' of the open w:instrText tag
+  let fieldBuf: string | null = null; // raw instrText accumulation, null outside a field
+
+  /** Close an unterminated field or bare instrText (isolated, never throws). */
+  const pushField = (): void => {
+    if (fieldBuf !== null) {
+      fields.push(decodeEntities(fieldBuf).decoded);
+      fieldBuf = null;
+    }
+  };
+  /** Append raw instrText content to the open field, or emit it as a marker. */
+  const absorbInstrText = (raw: string): void => {
+    if (fieldBuf !== null) fieldBuf += raw;
+    else fields.push(decodeEntities(raw).decoded);
+  };
 
   const emitRun = (raw: string): void => {
     const { decoded } = decodeEntities(raw);
@@ -240,8 +272,14 @@ function walkParagraphRegion(region: string): RegionWalk {
       i = end === -1 ? n : end + 3;
       continue;
     }
+    // CDATA `<![CDATA[ ... ]]>`.
     if (next === '!' && region.startsWith('![CDATA[', lt + 1)) {
       if (openText) emitRun(region.slice(textStart, lt));
+      if (openInstrText && instrStart >= 0) {
+        absorbInstrText(region.slice(instrStart, lt));
+        openInstrText = false;
+        instrStart = -1;
+      }
       const end = region.indexOf(']]>', lt + 9);
       i = end === -1 ? n : end + 3;
       continue;
@@ -258,7 +296,15 @@ function walkParagraphRegion(region: string): RegionWalk {
       const gt = region.indexOf('>', lt + 2);
       const closeInner = (gt === -1 ? region.slice(lt + 2) : region.slice(lt + 2, gt)).trim();
       const closeLocal = localName(closeInner);
-      if (closeLocal === 'pPr') {
+      if (closeLocal === 'instrText' && openInstrText) {
+        // Slice-based accumulation: inner markup (PIs/comments) is kept raw;
+        // the marker stays advisory and is never interpreted.
+        absorbInstrText(region.slice(instrStart, lt));
+        openInstrText = false;
+        instrStart = -1;
+      } else if (closeLocal === 'fldChar' && fieldBuf !== null) {
+        pushField(); // `</w:fldChar>` without a separate: close the field
+      } else if (closeLocal === 'pPr') {
         if (pPrDepth > 0) pPrDepth -= 1;
         if (pPrDepth === 0) inPPr = false;
       } else if (closeLocal === 'p') {
@@ -304,6 +350,22 @@ function walkParagraphRegion(region: string): RegionWalk {
       textStart = lt + tag.inner.length + 2; // +1 '<' +1 '>'
     } else if (isW(name, 't') && tag.selfClosing) {
       emitRun(''); // empty `<w:t/>`: zero-length run keeps runIndex aligned
+    } else if (isW(name, 'fldChar')) {
+      // Field boundary markers (Word/Zotero/Mendeley structured citations).
+      const ft = attrVal(tag.inner, 'w:fldCharType');
+      if (ft === 'begin') {
+        if (fieldBuf === null) fieldBuf = '';
+      } else if ((ft === 'separate' || ft === 'end') && fieldBuf !== null) {
+        pushField();
+      }
+    } else if (isW(name, 'instrText') && !tag.selfClosing) {
+      openInstrText = true;
+      instrStart = lt + tag.inner.length + 2; // +1 '<' +1 '>'
+    } else if (isW(name, 'fldSimple')) {
+      // Simple field: the instruction is an attribute; content is ordinary
+      // runs (visible text captured normally). Marker recorded verbatim.
+      const instr = attrVal(tag.inner, 'w:instr');
+      if (instr !== undefined) fields.push(decodeEntities(instr).decoded);
     } else if (!inPPr && (isW(name, 'br') || isW(name, 'cr'))) {
       // Line/paragraph break -> '\n' in block text (pPr-level `w:br
       // w:type="textWrapping"` is a wrap control, NOT visible text — skipped).
@@ -320,12 +382,21 @@ function walkParagraphRegion(region: string): RegionWalk {
   // Unterminated trailing text inside an open `<w:t>`.
   if (openText && textStart >= 0) emitRun(region.slice(textStart));
 
+  // Unterminated trailing text inside an open `<w:instrText>` (or an open
+  // field): record the marker as-is, isolated — never thrown.
+  if (openInstrText && instrStart >= 0) {
+    absorbInstrText(region.slice(instrStart));
+    openInstrText = false;
+    instrStart = -1;
+  }
+  if (fieldBuf !== null) pushField();
+
   if (numPrSeen) {
     props.isList = numIdVal === undefined || numIdVal !== '0';
     props.numberingId = numIdVal;
   }
 
-  return { text, runs, props, malformed };
+  return { text, runs, props, fields, malformed };
 }
 
 /** Local-name equality (prefix-agnostic, e.g. "w:t" or "t" both match "t"). */

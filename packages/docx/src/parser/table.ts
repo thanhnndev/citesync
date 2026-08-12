@@ -45,6 +45,11 @@ export interface ParsedTable {
   xmlEndOffset: number;
   /** True when malformed markup was encountered (isolated, never thrown). */
   malformed: boolean;
+  /**
+   * Count of cell paragraphs inside this table flagged malformed (unterminated
+   * tags etc.), surfaced for §88 failure isolation in the build layer.
+   */
+  malformedParagraphCount: number;
 }
 
 /**
@@ -177,5 +182,6 @@ function buildTable(
     xmlStartOffset: start,
     xmlEndOffset: endOrMinusOne,
     malformed,
+    malformedParagraphCount: paragraphs.filter((p) => p.malformed).length,
   };
 }
