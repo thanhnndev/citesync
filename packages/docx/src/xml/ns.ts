@@ -68,14 +68,20 @@ export function prefix(name: string): string | undefined {
 
 /**
  * Return the XML Name local part of a (possibly prefixed) name:
- * "w:t" -> "t", "xml:space" -> "space", "p" -> "p". Returns the input verbatim
- * when it is not (properly) qualified.
+ * "w:t" -> "t", "xml:space" -> "space", "p" -> "p", "a:b:c" -> "a:b:c". Returns
+ * the input verbatim when it is not (properly) qualified — including names
+ * with more than one ':' (invalid XML), keeping this helper consistent with
+ * {@link prefix} / {@link splitName} so a malformed name is never silently
+ * mis-sliced.
  */
 export function localName(name: string): string {
   if (name === '') return name;
-  const idx = name.indexOf(':');
-  if (idx === -1) return name;
-  return name.slice(idx + 1);
+  // Reject multi-colon (unambiguously invalid XML Name) the same way `prefix`
+  // does, and leave it verbatim rather than returning a wrong local part.
+  const first = name.indexOf(':');
+  if (first === -1) return name;
+  if (name.lastIndexOf(':') !== first) return name;
+  return name.slice(first + 1);
 }
 
 /**
