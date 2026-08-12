@@ -12,8 +12,8 @@
  * ordinal, so a full-document pass yields contiguous, deterministic ids.
  *
  * Structured-field identity (Zotero CSL_CITATION / Word CITATION codes) is
- * deliberately NOT handled here — that is T04 (`citations/fields.ts`), which
- * overlays tier-1/2 identity on top of this plain-text fallback.
+ * handled by T04 (`citations/fields.ts`), which overlays tier-1/2 identity
+ * on top of this plain-text fallback.
  */
 
 import type {
@@ -32,6 +32,21 @@ export type { ParsedCitation } from './grammar.js';
 export { parseAuthorPrefix, familyToken } from './authors.js';
 export { citationConfidence, BASE_FEATURES } from './confidence.js';
 export type { CitationFeatures } from './confidence.js';
+
+// S03-T04 — structured citation fields (Zotero CSL_CITATION / Word CITATION)
+// as the tier-1/2 identity backbone, keyed to the field's display region.
+export {
+  parseStructuredField,
+  detectStructuredCitationsInBlock,
+  structuredFieldConfidence,
+} from './fields.js';
+export type {
+  StructuredAuthor,
+  StructuredFieldItem,
+  StructuredFieldKind,
+  StructuredFieldIdentity,
+  StructuredFieldCitation,
+} from './fields.js';
 
 /**
  * Detect all author-date citation occurrences in one block's text, in
