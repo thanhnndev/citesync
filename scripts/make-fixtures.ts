@@ -23,8 +23,9 @@
  *     a plain fflate filter (never the reader) to prove the declared sizes
  *     and truncation behave as intended.
  *
- * Output: fixtures/minimal.docx, fixtures/author-date/** (corpus), and
- * fixtures/security/** (bomb / truncated / not-a-docx / garbage / vba).
+ * Output: fixtures/minimal.docx, fixtures/author-date/** + documents/docx/** +
+ * bibliography/** (corpus), and fixtures/security/** (bomb / truncated /
+ * not-a-docx / garbage / vba).
  * Every fixture path is also enumerated in fixtures/README.md (authored
  * here, byte-stable).
  */
@@ -594,6 +595,96 @@ const PACKAGE_FIXTURES: DocxSpec[] = [
       { runs: [t('And a bare mention: Smith 2024.')] },
     ],
   },
+
+  // ── bibliography corpus (S02 detection fixtures) ─────────────────────────
+  // S02-T2: dedicated fixtures for bilingual detection + the below-threshold
+  // and absent paths (S02-RESEARCH.md major risk). Each exercises a distinct
+  // signal combination the S02 weighted detector must score:
+  //   en-references   — exact heading text + reference-like paragraphs
+  //                     (English true-positive, high confidence)
+  //   vi-tai-lieu     — exact Vietnamese heading + reference entries
+  //                     (diacritics, true-positive)
+  //   style-position  — custom heading text via Heading1 style + late position
+  //                     + reference-like following paragraphs (weighted combo,
+  //                     no exact text match)
+  //   no-bibliography — narrative only -> outcome 'none'
+  //   ambiguous       — 'References' heading but non-reference-like short
+  //                     paragraphs following -> below-threshold/ask-user path
+  {
+    name: 'bibliography/en-references.docx',
+    title: 'English paper with reference list',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Literature Review')] },
+      { runs: [t('Doe (2017) examined citation practices across digital libraries.')] },
+      { runs: [t('Johnson (2018) proposed structured citation models for reproducibility.')] },
+      { runs: [t('Roe (2019) connected citation offsets to extraction accuracy.')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.')] },
+      { runs: [t('Johnson, A. (2018). Structured citations. Cambridge University Press.')] },
+      { runs: [t('Roe, M. (2019). Offsets and evidence. ACM Computing Surveys, 51(2), 1-30.')] },
+    ],
+  },
+
+  {
+    name: 'bibliography/vi-tai-lieu.docx',
+    title: 'Luận án tiếng Việt — danh mục tài liệu tham khảo',
+    creator: 'Nguyễn Văn A',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Danh mục tài liệu tham khảo')] },
+      { runs: [t('Nguyễn, V. A. (2015). Phương pháp trích dẫn tự động trong văn bản khoa học. Nhà xuất bản Đại học Quốc gia Hà Nội.')] },
+      { runs: [t('Trần, T. B. (2018). Cấu trúc trường trích dẫn trong tài liệu số. Tạp chí Khoa học và Công nghệ, 12(2), 33-47.')] },
+      { runs: [t('Phạm, Q. C. (2020). Nhận dạng danh mục tài liệu tham khảo trong văn bản. Đại học Bách khoa Hà Nội.')] },
+    ],
+  },
+
+  {
+    name: 'bibliography/style-position.docx',
+    title: 'Custom bibliography heading via heading style',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Introduction')] },
+      { runs: [t('Trích dẫn khoa học cần được xác định chính xác trong tài liệu.')] },
+      { runs: [t('Theo Nguyễn (2019), việc trích dẫn phải đảm bảo tính xác định.')] },
+      { runs: [t('Phương pháp này dựa trên các tín hiệu có trọng số trong văn bản.')] },
+      { runs: [t('Kết quả được trình bày chi tiết ở các phần sau.')] },
+      { heading: true, runs: [t('Danh mục trích dẫn')] },
+      { runs: [t('Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.')] },
+      { runs: [t('Johnson, A. (2018). Structured citations. Cambridge University Press.')] },
+      { runs: [t('Roe, M. (2019). Offsets and evidence. ACM Computing Surveys, 51(2), 1-30.')] },
+    ],
+  },
+
+  {
+    name: 'bibliography/no-bibliography.docx',
+    title: 'Narrative draft without a bibliography',
+    creator: 'CiteSync Fixtures',
+    paragraphs: [
+      { runs: [t('This draft discusses extraction quality without any reference list.')] },
+      { runs: [t('Smith (2020) noted that offset precision drives extraction quality.')] },
+      { runs: [t('Recent work (Nguyen & Tran, 2021) extended the approach to structured fields.')] },
+      { runs: [t('The authors plan to add a bibliography in a future revision.')] },
+    ],
+  },
+
+  {
+    name: 'bibliography/ambiguous.docx',
+    title: 'References heading with non-reference content',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Introduction')] },
+      { runs: [t('This paper explores citation extraction in academic documents.')] },
+      { runs: [t('Recent work (Doe, 2017) highlights the role of weighted signals.')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('See the appendix for further discussion.')] },
+      { runs: [t('The authors welcome feedback on the extraction pipeline.')] },
+      { runs: [t('Acknowledgments: funded by the research council.')] },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -966,6 +1057,16 @@ function main(): void {
     '| `documents/docx/apa-like.docx` | narrative + parenthetical citations + reference list |',
     '| `documents/docx/harvard.docx` | Harvard variants, page-number citation, entity-encoded text |',
     '| `documents/docx/plain-text.docx` | plain-text citations, no structured fields |',
+    '',
+    '## Corpus (bibliography)',
+    '',
+    '| fixture | purpose |',
+    '|---------|---------|',
+    '| `bibliography/en-references.docx` | English true-positive: `References` heading + reference-list entries (high confidence) |',
+    '| `bibliography/vi-tai-lieu.docx` | Vietnamese true-positive: `Danh mục tài liệu tham khảo` heading + diacritic entries |',
+    '| `bibliography/style-position.docx` | custom heading text via Heading1 style + late position + reference-like entries (weighted-signal path, no exact text) |',
+    '| `bibliography/no-bibliography.docx` | narrative only, no heading/reference segment -> outcome `none` |',
+    '| `bibliography/ambiguous.docx` | `References` heading but non-reference-like short paragraphs following -> below-threshold/ask-user path |',
     '',
     '## Security samples',
     '',

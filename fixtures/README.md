@@ -35,6 +35,16 @@ Re-running the script rewrites byte-identical files.
 | `documents/docx/harvard.docx` | Harvard variants, page-number citation, entity-encoded text |
 | `documents/docx/plain-text.docx` | plain-text citations, no structured fields |
 
+## Corpus (bibliography)
+
+| fixture | purpose |
+|---------|---------|
+| `bibliography/en-references.docx` | English true-positive: `References` heading + reference-list entries (high confidence) |
+| `bibliography/vi-tai-lieu.docx` | Vietnamese true-positive: `Danh mục tài liệu tham khảo` heading + diacritic entries |
+| `bibliography/style-position.docx` | custom heading text via Heading1 style + late position + reference-like entries (weighted-signal path, no exact text) |
+| `bibliography/no-bibliography.docx` | narrative only, no heading/reference segment -> outcome `none` |
+| `bibliography/ambiguous.docx` | `References` heading but non-reference-like short paragraphs following -> below-threshold/ask-user path |
+
 ## Security samples
 
 | fixture | expected reader behavior |

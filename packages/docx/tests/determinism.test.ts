@@ -42,6 +42,11 @@ const VALID_FIXTURES = [
   'documents/docx/apa-like.docx',
   'documents/docx/harvard.docx',
   'documents/docx/plain-text.docx',
+  'bibliography/en-references.docx',
+  'bibliography/vi-tai-lieu.docx',
+  'bibliography/style-position.docx',
+  'bibliography/no-bibliography.docx',
+  'bibliography/ambiguous.docx',
   'security/vba-sample.docx',
 ];
 

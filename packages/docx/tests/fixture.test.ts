@@ -78,6 +78,11 @@ const KNOWN_CITATIONS: Record<string, string[]> = {
   'documents/docx/apa-like.docx': ['Johnson (2018)', '(Doe, 2017; Roe, 2019)', 'Doe, J. (2017).'],
   'documents/docx/harvard.docx': ['(Smith, 2024, p. 12)', '(Nguyen 2021)', 'Le (2023)'],
   'documents/docx/plain-text.docx': ['(Johnson 2018)', '[1]', 'Smith 2024'],
+  'bibliography/en-references.docx': ['Doe (2017)', 'Johnson (2018)', 'Roe (2019)', 'Doe, J. (2017).', 'Johnson, A. (2018).', 'Roe, M. (2019).'],
+  'bibliography/vi-tai-lieu.docx': ['Nguyễn, V. A. (2015).', 'Trần, T. B. (2018).', 'Phạm, Q. C. (2020).'],
+  'bibliography/style-position.docx': ['Doe, J. (2017).', 'Johnson, A. (2018).', 'Roe, M. (2019).'],
+  'bibliography/no-bibliography.docx': ['Smith (2020)', '(Nguyen & Tran, 2021)'],
+  'bibliography/ambiguous.docx': ['(Doe, 2017)'],
   'security/vba-sample.docx': [], // macro carriage text only — no citations
 };
 
@@ -91,9 +96,10 @@ const FIXTURES_WITH_FOOTNOTES = new Set([
 describe('fixture corpus — real .docx files parse end to end', () => {
   it('covers the full committed fixture corpus (manifest drift guard)', () => {
     // Lock the fixture inventory: README.md + minimal(1) + author-date(7) +
-    // documents(3) + security(6 incl. not-a-docx.zip + lying-bomb) = 18 files.
-    expect(ALL_FILES).toHaveLength(18);
-    expect(VALID_FIXTURES).toHaveLength(12);
+    // documents(3) + bibliography(5) + security(6 incl. not-a-docx.zip +
+    // lying-bomb) = 23 files.
+    expect(ALL_FILES).toHaveLength(23);
+    expect(VALID_FIXTURES).toHaveLength(17);
     expect(BAD_SAMPLES).toHaveLength(5);
   });
 
