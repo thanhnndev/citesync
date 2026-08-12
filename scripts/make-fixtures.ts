@@ -36,6 +36,9 @@ import { fileURLToPath } from 'node:url';
 
 import { deflateSync, unzipSync, zipSync } from 'fflate';
 
+import { KNOWN_OCCURRENCES } from './fixture-ground-truth.js';
+import { KNOWN_REFERENCES } from './fixture-ground-truth-references.js';
+
 const MIB = 1024 * 1024;
 /** Reader bound we author against (mirrors packages/docx/src/zip/limits.ts). */
 const DOCX_ENTRY_MAX = 50 * MIB;
@@ -928,6 +931,72 @@ function selfCheckNotADocx(bytes: Uint8Array): void {
 }
 
 // ---------------------------------------------------------------------------
+// S03-T06: ground-truth manifest rendering (KNOWN_CITATIONS/KNOWN_REFERENCES).
+// ---------------------------------------------------------------------------
+
+/**
+ * Render the S03 extraction ground truth (from `fixture-ground-truth.ts`) as
+ * README rows — the manifest documents exactly what the extraction tests
+ * assert. Pure + deterministic (R008); `JSON.stringify` is stable for the
+ * small item objects rendered here.
+ */
+function renderGroundTruth(): string[] {
+  const lines: string[] = [
+    '## S03 extraction ground truth (KNOWN_CITATIONS / KNOWN_REFERENCES)',
+    '',
+    'The §20 citation occurrences and §21 reference entries the S03 pipeline must produce',
+    'per fixture — single source of truth: `scripts/fixture-ground-truth.ts`, asserted',
+    'byte-stably by `packages/docx/tests/extraction.test.ts` (any change to fixture',
+    'bytes, the model shape, the grammar or the normalization drifts these tables).',
+    '',
+  ];
+  for (const [name, occs] of Object.entries(KNOWN_OCCURRENCES)) {
+    lines.push(`### ${name}`);
+    lines.push('');
+    if (occs.length === 0) {
+      lines.push('_no citations_');
+      lines.push('');
+      continue;
+    }
+    for (const o of occs) {
+      const items = o.items.map((it) => JSON.stringify(it)).join(' ; ');
+      lines.push(
+        `- \`${o.id}\` \`${o.raw}\` @ \`${o.source.blockId}[${o.source.startOffset},${o.source.endOffset})\` ` +
+          `${o.family} conf ${o.confidence} → ${items}`,
+      );
+    }
+    lines.push('');
+  }
+  for (const name of Object.keys(KNOWN_REFERENCES)) {
+    const entries = KNOWN_REFERENCES[name]!;
+    lines.push(`### ${name} (references)`);
+    lines.push('');
+    if (entries.length === 0) {
+      lines.push('_detected section without entry blocks — parsing scope is exactly S02\'s blockIds_');
+      lines.push('');
+      continue;
+    }
+    for (const e of entries) {
+      const parts: string[] = [];
+      if (e.authors !== undefined) {
+        parts.push(`authors=[${e.authors.map((a) => a.originalName).join(' | ')}]`);
+      }
+      if (e.year !== undefined) parts.push(`year=${e.year}${e.yearSuffix ?? ''}`);
+      if (e.title !== undefined) parts.push(`title="${e.title}"`);
+      if (e.containerTitle !== undefined) parts.push(`container="${e.containerTitle}"`);
+      if (e.identifiers !== undefined) parts.push(`identifiers=${JSON.stringify(e.identifiers)}`);
+      if (e.doi !== undefined) parts.push(`doi=${e.doi}`);
+      lines.push(
+        `- \`${e.id}\` @ \`${e.source.blockId}[${e.source.startOffset},${e.source.endOffset})\` ` +
+          `conf ${e.parseConfidence} → ${parts.join(' ')}`,
+      );
+    }
+    lines.push('');
+  }
+  return lines;
+}
+
+// ---------------------------------------------------------------------------
 // Write fixtures + manifest.
 // ---------------------------------------------------------------------------
 
@@ -1082,6 +1151,8 @@ function main(): void {
     '> `security/vba-sample.docx` is a VALID package (macro parts are note-and-skip, never',
     '> executed or decoded). Only the five explicitly "bad" samples are expected to throw',
     '> typed errors from the reader.',
+    '',
+    ...renderGroundTruth(),
   ];
   const readmePath = join(FIXTURES_DIR, 'README.md');
   mkdirSync(dirname(readmePath), { recursive: true });

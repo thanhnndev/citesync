@@ -62,6 +62,64 @@ export { extractCoreProperties } from './metadata.js';
 
 export { buildModel } from './build-model.js';
 
+// S03 (T06): end-to-end extraction — §20 citation occurrences over every block
+// (body + footnotes + endnotes, structured-field identity overlaid) and §21
+// reference entries from the detected bibliography span.
+export { extractCitations, parseReferences } from './extract.js';
+export type { ExtractedReferences } from './extract.js';
+
+// S03 (T02): diacritic-aware tiered name normalization (shared by citation
+// extraction, reference parsing and the S04 §25 matcher).
+export {
+  normalizeIdentityName,
+  stripDiacritics,
+  initialsKey,
+  buildNameKey,
+  isVietnameseFamilyName,
+} from './normalize/index.js';
+
+// S03 (T03/T04): citation candidate detection, author-date grammar, confidence
+// scoring and the structured-field identity backbone (Zotero/Word).
+export {
+  findParentheticalRegions,
+  scanNamePrefix,
+  findCitationCandidates,
+  parseCandidate,
+  parseAuthorPrefix,
+  familyToken,
+  citationConfidence,
+  BASE_FEATURES,
+  parseStructuredField,
+  detectStructuredCitationsInBlock,
+  structuredFieldConfidence,
+  detectCitationsInBlock,
+} from './citations/index.js';
+export type {
+  ParentheticalRegion,
+  CitationCandidate,
+  ParsedCitation,
+  CitationFeatures,
+  StructuredAuthor,
+  StructuredFieldItem,
+  StructuredFieldKind,
+  StructuredFieldIdentity,
+  StructuredFieldCitation,
+} from './citations/index.js';
+
+// S03 (T05): bibliography entry splitting + §21 reference grammar + confidence
+// (§88 failure isolation — unparseable entries never throw).
+export {
+  splitEntryBlocks,
+  isReferenceEntryBlock,
+  parseReferenceEntry,
+  splitAuthorGroups,
+  personName,
+  describeReferenceParseFailure,
+  referenceConfidence,
+  BASE_REFERENCE_FEATURES,
+} from './references/index.js';
+export type { ReferenceFeatures } from './references/index.js';
+
 // S02 (bibliography detection, D009): the weighted-signal detector and its
 // conservative threshold, exposed for direct reuse and the ask-user flow
 // (M003) — the pure core behind AcademicDocument.bibliography.
@@ -83,6 +141,10 @@ export type {
   DocumentSecurityInfo,
   NumericCitationItem,
   ParseIssue,
+  PersonName,
+  PersonNameKey,
+  ReferenceEntry,
+  ReferenceParseIssue,
   RunSpan,
   SourceLocation,
   SourceMap,

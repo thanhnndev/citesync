@@ -141,6 +141,29 @@ describe('determinism (R008) — S02 bibliography stability', () => {
   });
 });
 
+describe('determinism (R008) — S03 citations + bibliography entries stability', () => {
+  it('keeps doc.citations and doc.bibliography.entries deep-equal across parses (all fixtures)', () => {
+    for (const rel of VALID_FIXTURES) {
+      const bytes = readFileSync(join(FIXTURES_DIR, rel));
+      const a = parseDocument(bytes);
+      const b = parseDocument(bytes);
+      expect(b.citations, rel).toEqual(a.citations);
+      expect(b.bibliography?.entries, rel).toEqual(a.bibliography?.entries);
+      expect(b.referenceParseIssues, rel).toEqual(a.referenceParseIssues);
+    }
+  });
+
+  it('re-numbers the merged structured+plain stream to contiguous c0..cN (et-al.docx)', () => {
+    // et-al.docx's Zotero field overlaps its plain-text occurrence — the merged
+    // stream must still be contiguous and byte-identical across parses (R008).
+    const bytes = readFileSync(join(FIXTURES_DIR, 'author-date/et-al.docx'));
+    const a = parseDocument(bytes);
+    const b = parseDocument(bytes);
+    expect(a.citations.map((c) => c.id)).toEqual(a.citations.map((_, i) => `c${i}`));
+    expect(JSON.stringify(b.citations)).toBe(JSON.stringify(a.citations));
+  });
+});
+
 describe('determinism (R008) — committed golden anchor', () => {
   it('locks the minimal.docx shape against tests/golden/minimal.golden.json', () => {
     const bytes = readFileSync(join(FIXTURES_DIR, 'minimal.docx'));

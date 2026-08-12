@@ -4,8 +4,10 @@
  * The S01 deliverable assembler: takes the bounded {@link ZipParts} map from
  * the S01-T3 bounds-guarded reader and produces the §15
  * {@link AcademicDocument} that S02–S04 consume — `metadata`, `blocks`,
- * `sourceMap` owned here; `bibliography` left undefined (S02) and `citations`
- * an empty array (S03).
+ * `sourceMap` owned here. S02 detection fills `bibliography` and S03 (T06)
+ * fills `doc.citations` (§20 occurrences via `extractCitations`) and
+ * `doc.bibliography.entries` (§21 reference records via `parseReferences`,
+ * with §88 failures isolated into `doc.referenceParseIssues`).
  *
  * PARTS READ: word/document.xml (required — the reader already enforces it),
  * word/styles.xml, word/footnotes.xml, word/endnotes.xml (optional style map /
@@ -56,6 +58,7 @@ import { parseBody } from './parser/document.js';
 import { noteToBlock, scanNotePart } from './parser/footnotes.js';
 import { loadStyleMap } from './parser/style.js';
 import { detectBibliography } from './bibliography/detect.js';
+import { extractCitations, parseReferences } from './extract.js';
 
 const PART_DOCUMENT = 'word/document.xml';
 const PART_STYLES = 'word/styles.xml';
@@ -137,15 +140,26 @@ export function buildModel(parts: ZipParts): AcademicDocument {
   };
   if (bibResult.outcome === 'detected') {
     doc.bibliography = bibResult.section;
+    // S03 (T06): parse the detected section's blockIds span into §21 entries
+    // (heading skipped unless it carries an entry; §88 failures isolated).
+    const { entries, issues } = parseReferences(doc);
+    doc.bibliography.entries = entries;
+    if (issues.length > 0) doc.referenceParseIssues = issues;
   } else if (bibResult.outcome === 'below-threshold') {
     // Ask-user path: no confident section, but candidates exist. blockIds and
-    // heading stay undefined until the user picks a candidate (M003).
+    // heading stay undefined until the user picks a candidate (M003) — no
+    // entries are parsed until a section is chosen.
     doc.bibliography = {
       outcome: 'below-threshold',
       confidence: bibResult.confidence,
       candidates: bibResult.candidates,
     };
   }
+  // S03 (T06): fill §20 citation occurrences — plain-text detection (T03) over
+  // every block (body + footnotes + endnotes) with structured-field identity
+  // (T04, Zotero/Word) overlaid. Pure + deterministic (R008); the citation pass
+  // is independent of the bibliography outcome.
+  doc.citations = extractCitations(doc);
   if (parseIssues.length > 0) doc.parseIssues = parseIssues;
   if (security !== undefined) doc.security = security;
   return doc;

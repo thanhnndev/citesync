@@ -208,7 +208,7 @@ describe('parseDocument — complete AcademicDocument (golden inline docx)', () 
     });
   });
 
-  it('fills bibliography below-threshold (ask-user path) and leaves citations empty (S03 stub)', () => {
+  it('fills bibliography below-threshold (ask-user path) and S03 §20 citations', () => {
     // S02 wiring (T04): the golden doc's style-heading "Introduction" (doc-p0)
     // with one reference-like follower never clears BIBLIOGRAPHY_THRESHOLD, so
     // the engine does NOT guess a section (R004) — the ask-user contract is
@@ -226,7 +226,44 @@ describe('parseDocument — complete AcademicDocument (golden inline docx)', () 
         },
       ],
     });
-    expect(doc.citations).toEqual([]); // S03 stub
+    // S03 wiring (T06): §20 occurrences across body + table + footnotes +
+    // endnotes, in document order with contiguous ids. "See also Doe (2020)."
+    // yields NO citation — the 'see' stopword terminates the narrative prefix
+    // and the bare "(2020)" has no author (conservative over-match guard).
+    expect(doc.citations).toEqual([
+      {
+        id: 'c0',
+        raw: 'Smith (2024)',
+        family: 'author-date',
+        items: [{ firstAuthor: 'Smith', authors: ['Smith'], year: 2024 }],
+        source: { blockId: 'doc-p1', paragraphIndex: 1, startOffset: 0, endOffset: 12 },
+        confidence: 0.9,
+      },
+      {
+        id: 'c1',
+        raw: '(Brown, 2019)',
+        family: 'author-date',
+        items: [{ firstAuthor: 'Brown', authors: ['Brown'], year: 2019 }],
+        source: { blockId: 'doc-t0', startOffset: 14, endOffset: 27 },
+        confidence: 1,
+      },
+      {
+        id: 'c2',
+        raw: '(Lee, 2021)',
+        family: 'author-date',
+        items: [{ firstAuthor: 'Lee', authors: ['Lee'], year: 2021 }],
+        source: { blockId: 'fn-fn0', startOffset: 14, endOffset: 25 },
+        confidence: 1,
+      },
+      {
+        id: 'c3',
+        raw: '(Wang, 2018)',
+        family: 'author-date',
+        items: [{ firstAuthor: 'Wang', authors: ['Wang'], year: 2018 }],
+        source: { blockId: 'en-fn0', startOffset: 10, endOffset: 22 },
+        confidence: 1,
+      },
+    ]);
     expect(doc.parseIssues).toBeUndefined(); // golden doc parses cleanly
     expect(doc.security).toBeUndefined();
   });
