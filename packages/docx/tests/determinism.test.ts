@@ -29,6 +29,39 @@ import { parseDocument } from '../src/index.js';
 const FIXTURES_DIR = fileURLToPath(new URL('../../../fixtures/', import.meta.url));
 const GOLDEN_DIR = fileURLToPath(new URL('./golden/', import.meta.url));
 
+/**
+ * Expected S02 bibliography outcome per valid fixture (T03 detector ground
+ * truth; T02 authored the 5 `bibliography/` fixtures to exercise each path):
+ *   - 'detected'         — doc.bibliography present with a confident section;
+ *   - 'below-threshold'  — present with candidates[] for the M003 ask-user
+ *     flow (R004 — never a silent guess);
+ *   - 'absent'           — outcome 'none', doc.bibliography undefined.
+ * Documents with no heading at all yield 'absent'; documents whose only
+ * headings are non-bibliography ones still yield 'below-threshold' with the
+ * scored candidates (the engine reports, it never guesses). apa-like.docx is
+ * a real boundary case: 'References' Heading1 at document start + 1/3
+ * reference-like follow scores exactly 0.6 (BIBLIOGRAPHY_THRESHOLD) -> detected.
+ */
+const EXPECTED_BIBLIOGRAPHY: Record<string, 'detected' | 'below-threshold' | 'absent'> = {
+  'minimal.docx': 'below-threshold',
+  'author-date/simple.docx': 'below-threshold',
+  'author-date/et-al.docx': 'below-threshold',
+  'author-date/multiple-authors.docx': 'absent',
+  'author-date/same-author-year.docx': 'absent',
+  'author-date/missing.docx': 'absent',
+  'author-date/ambiguous.docx': 'absent',
+  'author-date/vietnamese.docx': 'below-threshold',
+  'documents/docx/apa-like.docx': 'detected',
+  'documents/docx/harvard.docx': 'absent',
+  'documents/docx/plain-text.docx': 'absent',
+  'bibliography/en-references.docx': 'detected',
+  'bibliography/vi-tai-lieu.docx': 'detected',
+  'bibliography/style-position.docx': 'detected',
+  'bibliography/no-bibliography.docx': 'absent',
+  'bibliography/ambiguous.docx': 'below-threshold',
+  'security/vba-sample.docx': 'below-threshold',
+};
+
 /** Every valid committed fixture (mirrors fixture.test.ts inventory). */
 const VALID_FIXTURES = [
   'minimal.docx',
@@ -78,6 +111,33 @@ describe('determinism (R008) — same bytes, same document', () => {
     expect(Object.keys(a.sourceMap.blocks)).toEqual(Object.keys(b.sourceMap.blocks));
     // Run offsets are identical byte-for-byte.
     expect(JSON.stringify(a.sourceMap)).toBe(JSON.stringify(b.sourceMap));
+  });
+});
+
+describe('determinism (R008) — S02 bibliography stability', () => {
+  it('keeps the bibliography outcome present/absent exactly per fixture', () => {
+    for (const rel of VALID_FIXTURES) {
+      const doc = parseDocument(readFileSync(join(FIXTURES_DIR, rel)));
+      const expected = EXPECTED_BIBLIOGRAPHY[rel];
+      if (expected === 'absent') {
+        expect(doc.bibliography, `${rel} bibliography absent`).toBeUndefined();
+      } else {
+        expect(doc.bibliography, `${rel} bibliography present`).toBeDefined();
+        expect(doc.bibliography!.outcome, `${rel} bibliography outcome`).toBe(expected);
+      }
+    }
+  });
+
+  it('keeps the bibliography deep-stable across parses, candidates included', () => {
+    for (const rel of VALID_FIXTURES) {
+      const bytes = readFileSync(join(FIXTURES_DIR, rel));
+      const a = parseDocument(bytes);
+      const b = parseDocument(bytes);
+      // Deep equality covers the whole bibliography: for 'detected' the ordered
+      // blockIds span, for 'below-threshold' the candidates[] array (including
+      // the ambiguous.docx 2-candidate array — lock-stable for the M003 UI).
+      expect(b.bibliography, rel).toEqual(a.bibliography);
+    }
   });
 });
 
