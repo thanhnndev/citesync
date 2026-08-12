@@ -208,9 +208,25 @@ describe('parseDocument — complete AcademicDocument (golden inline docx)', () 
     });
   });
 
-  it('leaves bibliography undefined and citations empty (S02/S03 stubs)', () => {
-    expect(doc.bibliography).toBeUndefined();
-    expect(doc.citations).toEqual([]);
+  it('fills bibliography below-threshold (ask-user path) and leaves citations empty (S03 stub)', () => {
+    // S02 wiring (T04): the golden doc's style-heading "Introduction" (doc-p0)
+    // with one reference-like follower never clears BIBLIOGRAPHY_THRESHOLD, so
+    // the engine does NOT guess a section (R004) — the ask-user contract is
+    // model-first-class: candidates + best confidence, no blockIds/heading.
+    expect(doc.bibliography).toEqual({
+      outcome: 'below-threshold',
+      confidence: 0.25, // 0.15 heading style + 1/3 reference-like lookahead × 0.30
+      candidates: [
+        {
+          blockId: 'doc-p0',
+          heading: 'Introduction',
+          headingType: 'reference-segment',
+          startIndex: 0,
+          confidence: 0.25,
+        },
+      ],
+    });
+    expect(doc.citations).toEqual([]); // S03 stub
     expect(doc.parseIssues).toBeUndefined(); // golden doc parses cleanly
     expect(doc.security).toBeUndefined();
   });

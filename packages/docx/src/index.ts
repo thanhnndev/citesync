@@ -62,10 +62,17 @@ export { extractCoreProperties } from './metadata.js';
 
 export { buildModel } from './build-model.js';
 
+// S02 (bibliography detection, D009): the weighted-signal detector and its
+// conservative threshold, exposed for direct reuse and the ask-user flow
+// (M003) — the pure core behind AcademicDocument.bibliography.
+export { detectBibliography, BIBLIOGRAPHY_THRESHOLD } from './bibliography/detect.js';
+
 // The shared §15 model contract (re-exported for one-import convenience).
 export type {
   AcademicDocument,
   AuthorDateCitationItem,
+  BibliographyCandidate,
+  BibliographyDetectionResult,
   BibliographySection,
   BlockSourceMap,
   CitationItem,

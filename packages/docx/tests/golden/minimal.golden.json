@@ -94,5 +94,18 @@
         ]
       }
     }
+  },
+  "bibliography": {
+    "outcome": "below-threshold",
+    "confidence": 0.15,
+    "candidates": [
+      {
+        "blockId": "doc-p0",
+        "heading": "Introduction",
+        "headingType": "style",
+        "startIndex": 0,
+        "confidence": 0.15
+      }
+    ]
   }
 }

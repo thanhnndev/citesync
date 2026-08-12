@@ -55,6 +55,7 @@ import { extractCoreProperties } from './metadata.js';
 import { parseBody } from './parser/document.js';
 import { noteToBlock, scanNotePart } from './parser/footnotes.js';
 import { loadStyleMap } from './parser/style.js';
+import { detectBibliography } from './bibliography/detect.js';
 
 const PART_DOCUMENT = 'word/document.xml';
 const PART_STYLES = 'word/styles.xml';
@@ -119,12 +120,32 @@ export function buildModel(parts: ZipParts): AcademicDocument {
   const parseIssues = collectParseIssues(documentXml, body, footnoteNotes, endnoteNotes);
   const security = scanSecurity(parts);
 
+  // S02 (bibliography detection, D009): run the weighted-signal detector over
+  // the BODY blocks only — bibliographies live in the document part, never in
+  // notes. `detected` fills doc.bibliography with the section; `below-threshold`
+  // still fills it (candidates + best confidence) so the ask-user path is
+  // model-first-class (R004 / PRD §17 — the engine never silently guesses a
+  // section); `none` leaves it undefined (absent bibliography). detectBibliography
+  // is pure, so this preserves buildModel determinism (R008).
+  const bibResult = detectBibliography(body.entries.map((e) => e.block));
+
   const doc: AcademicDocument = {
     metadata,
     blocks,
     citations: [],
     sourceMap: { version: 1, blocks: sourceMapBlocks },
   };
+  if (bibResult.outcome === 'detected') {
+    doc.bibliography = bibResult.section;
+  } else if (bibResult.outcome === 'below-threshold') {
+    // Ask-user path: no confident section, but candidates exist. blockIds and
+    // heading stay undefined until the user picks a candidate (M003).
+    doc.bibliography = {
+      outcome: 'below-threshold',
+      confidence: bibResult.confidence,
+      candidates: bibResult.candidates,
+    };
+  }
   if (parseIssues.length > 0) doc.parseIssues = parseIssues;
   if (security !== undefined) doc.security = security;
   return doc;
