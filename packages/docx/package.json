@@ -19,6 +19,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@citesync/document-model": "0.1.0",
     "fast-xml-parser": "5.10.1",
     "fflate": "0.8.3"
   },
