@@ -11,6 +11,13 @@
  *   - `bibliography` (owned by S02) and `citations` (owned by S03) are contract
  *     stubs only: the shapes below compile and are PRD-aligned, but S01 never
  *     fills them. S01 owns `metadata`, `blocks` and `sourceMap`.
+ *   - S03-T01 added the §21 reference-record contract to the shared model:
+ *     `ReferenceEntry` (verbatim PRD §21), `PersonName` with its tiered
+ *     `PersonNameKey` (preserves the §24/§25 matching tiers) and
+ *     `ReferenceParseIssue` (§88 failure isolation). `BibliographySection.entries`
+ *     is typed `ReferenceEntry[]`; S03 fills it from S02's detected `blockIds`
+ *     span. Because §21 has no page field, volume/issue/pages fold into
+ *     `identifiers` — locked in D012.
  *
  * OFFSET SEMANTICS DECISION (documented on `SourceLocation`, `RunSpan`,
  * `SourceMap` and repeated here for discoverability):
@@ -223,10 +230,14 @@ export interface BibliographySection {
    */
   candidates?: BibliographyCandidate[];
   /**
-   * Reserved: reference entries. S03 (reference-entry parsing) defines and
-   * fills this; S02 leaves it unspecified/undefined.
+   * Parsed reference entries (§21). Filled by S03 reference-entry parsing
+   * from the S02-detected `blockIds` span (entry blocks only — the heading
+   * block is skipped unless it carries an entry); S02 leaves it
+   * unspecified/undefined. An unparseable entry is still emitted here with
+   * `parseConfidence: 0` and recorded in
+   * `AcademicDocument.referenceParseIssues` (§88 isolation).
    */
-  entries?: unknown[];
+  entries?: ReferenceEntry[];
 }
 
 /**
@@ -358,6 +369,109 @@ export interface NumericCitationItem {
 }
 
 /**
+ * §24/§25 — tiered normalized-name key (S03 produces, S04 consumes).
+ *
+ * Preserves the §25 matching tiers so downstream matching applies them
+ * without re-normalizing:
+ *   - `exact` — §25 tiers 1–2 (exact + normalized surname): case-folded
+ *     (plain `toLowerCase`), Unicode NFC, punctuation removed, whitespace
+ *     collapsed, diacritics PRESERVED. `Nguyễn` ≠ `Nguyen` here.
+ *   - `diacriticInsensitive` — §25 tier 3: `exact` with all combining marks
+ *     stripped (NFD → remove `\p{M}` → NFC), `Đ`/`đ` NOT collapsed to `d`.
+ *     Secondary candidate signal only — MUST NOT override `exact` (§24).
+ *   - `initials` — §25 tier 4 initial-compatible key (e.g. `j d` from
+ *     "John Doe").
+ * The §25 tier 5 (fuzzy) is S04's matching concern and needs no stored key.
+ */
+export interface PersonNameKey {
+  /** Tier 1–2 key: normalized, diacritic-preserving (Nguyễn ≠ Nguyen). */
+  exact: string;
+  /** Tier 3 key: diacritic-stripped secondary signal (Nguyễn = Nguyen). */
+  diacriticInsensitive: string;
+  /** Tier 4 key: initial-compatible. */
+  initials: string;
+}
+
+/**
+ * §21 — one author name with its tiered normalized key.
+ *
+ * Family-first segmentation matches Vietnamese name order (surname is the
+ * FIRST token, e.g. `Nguyễn` in `Nguyễn Văn A`). `key` preserves the
+ * §24/§25 tiers so S04's matcher compares without re-normalizing.
+ */
+export interface PersonName {
+  /** The name exactly as it appears in the source text. */
+  originalName: string;
+  /** Family/surname segment (first token for Vietnamese names). */
+  family: string;
+  /** Given (fore) name segment(s), when segmentable. */
+  given?: string;
+  /** Tiered normalized key (§24/§25) — see `PersonNameKey`. */
+  key: PersonNameKey;
+}
+
+/**
+ * §21 — one parsed bibliography entry (verbatim PRD §21 shape).
+ *
+ * The PRD §21 model has NO page field: the journal volume/issue/pages tail
+ * folds into `identifiers` (e.g. `{ volume: '12', issue: '3', pages: '45-60' }`)
+ * — locked in D012; `raw` always preserves the lossless source text.
+ * `parseConfidence: 0` means the reference grammar failed and `raw` is kept
+ * verbatim (§88 failure isolation — analysis continues, the issue is recorded
+ * in `AcademicDocument.referenceParseIssues`).
+ */
+export interface ReferenceEntry {
+  /** Stable, deterministic reference identifier. */
+  id: string;
+  /** Raw entry text exactly as it appeared in the bibliography block. */
+  raw: string;
+  /** Zero-based position of the entry within the bibliography section. */
+  index?: number;
+  /** Parsed authors, normalized (§21/§24). */
+  authors?: PersonName[];
+  /** Publication year. */
+  year?: number;
+  /** Same-author-same-year disambiguation suffix (2018a → 'a'). */
+  yearSuffix?: string;
+  /** Title of the cited work. */
+  title?: string;
+  /** Container title (journal/book/venue). */
+  containerTitle?: string;
+  /** Digital Object Identifier when present. */
+  doi?: string;
+  /**
+   * Volume/issue/pages and other identifiers folded here (no §21 page
+   * field), e.g. `{ volume, issue, pages }` — D012.
+   */
+  identifiers?: Record<string, string>;
+  /** Source location of the entry (R009 evidence: block + char offsets). */
+  source: SourceLocation;
+  /** Parse confidence in [0, 1]; 0 = grammar failed, raw preserved. */
+  parseConfidence: number;
+}
+
+/**
+ * S03 extension (additive): one isolated, non-fatal reference-parsing issue
+ * (§88). Recorded when the reference grammar fails on a bibliography entry;
+ * the entry is still emitted (`parseConfidence: 0`) so full-document
+ * analysis continues. Carried on `AcademicDocument.referenceParseIssues`
+ * (absent when every entry parsed cleanly). Entry-scoped, unlike the
+ * part-scoped S01 `ParseIssue`.
+ */
+export interface ReferenceParseIssue {
+  /** The `DocumentBlock.id` of the unparseable bibliography entry. */
+  blockId: string;
+  /** Zero-based entry index within the bibliography section. */
+  index: number;
+  /** The raw entry text exactly as it appeared in the block. */
+  raw: string;
+  /** Machine-readable code. */
+  code: 'reference-parse';
+  /** Human-readable reason the grammar failed. */
+  message: string;
+}
+
+/**
  * §15 — the AcademicDocument contract (verbatim), the fixed handoff shape for
  * S02–S04. S01 fills `metadata`, `blocks`, `sourceMap` only; `bibliography`
  * (S02) and `citations` (S03) are contract stubs left empty/undefined.
@@ -369,6 +483,13 @@ export interface AcademicDocument {
   bibliography?: BibliographySection;
   /** Filled by S03 (citation extraction). Empty array until then. */
   citations: CitationOccurrence[];
+  /**
+   * S03 extension (additive): isolated non-fatal reference-parsing issues
+   * (§88) — one per bibliography entry whose grammar parse failed. The entry
+   * is still emitted with `parseConfidence: 0` so analysis continues. Absent
+   * when every reference parsed cleanly.
+   */
+  referenceParseIssues?: ReferenceParseIssue[];
   sourceMap: SourceMap;
   /**
    * S01 extension (additive): isolated non-fatal parse issues (§88). Absent
