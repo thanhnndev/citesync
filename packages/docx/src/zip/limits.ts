@@ -10,6 +10,13 @@
  *
  * All caps are exclusive upper bounds: a value strictly greater than the cap
  * is rejected; a value equal to the cap is accepted.
+ *
+ * S01-T9 hardening: the central-directory sizes of a ZIP are attacker-
+ * declared, so every cap below is enforced TWICE — once as a cheap
+ * declared-size pre-filter (reader.ts filter) and again on the ACTUAL
+ * extracted bytes (the S01-T9 lying-declaration stopper: fflate's sync
+ * unzip truncates silent, so the reader now drives fflate's streaming
+ * `Inflate` in bounded chunks and counts real output as it is produced).
  */
 
 /** Byte count of 1 MiB (for readability below). */
@@ -22,17 +29,23 @@ const MIB = 1024 * 1024;
  * pages-embedded or image-dense files occasionally push tens of MiB. 50 MiB
  * covers those while keeping the single largest decompression allocation
  * (and therefore single-entry inflate time) small and bounded.
+ *
+ * Enforced on ACTUAL output: the reader rejects an entry whose real inflated
+ * bytes exceed this (S01-T9), even if the central directory declared a tiny
+ * size. Because the streaming inflate aborts at cap+1 bytes, the worst-case
+ * allocation is ~cap plus one feed chunk of expansion, independent of how
+ * large the true bomb is.
  */
 export const DOCX_ENTRY_MAX = 50 * MIB;
 
 /**
  * Aggregate uncompressed-size cap across all accepted entries (MiB).
  *
- * Because the reader's filter rejects an entry as soon as the running sum of
- * accepted entries would exceed this, unzipSync never materialises more than
- * ~200 MiB of decompressed data in total — this is what actually stops a
- * multi-entry zip bomb (many small-`originalSize` entries summing to gigabytes)
- * before any of them is decompressed.
+ * The reader's declared-size pre-filter refuses an entry as soon as the
+ * running DECLARED sum would exceed this (a cheap multi-entry-bomb stopper),
+ * and the S01-T9 actual-size reconciliation re-checks the running sum of
+ * ACTUAL extracted bytes after every entry — so even a set of lying entries
+ * whose declarations stay under the cap cannot bypass the real total.
  */
 export const TOTAL_DECOMPRESSED_MAX = 200 * MIB;
 
@@ -52,19 +65,21 @@ export const XML_STRING_MAX = 64 * MIB;
  *
  * A real .docx has a handful of parts (usually well under 100). 2000 leaves
  * room for pathological-but-legitimate archives while bounding the entry-loop
- * iteration and the resulting parts map size. The reader rejects any entry
- * past this count in its filter, so nothing beyond the cap is decompressed.
+ * iteration and the resulting parts map size. Enforced twice: the count
+ * declared by the end-of-central-directory record is capped BEFORE the
+ * central-directory scan (so a lying EOCD cannot force a billion-iteration
+ * loop), and the per-entry filter refuses anything past the cap as well.
  */
 export const MAX_ENTRY_COUNT = 2000;
 
 /**
- * Processing time budget (ms) — a best-effort, cross-entry guard.
+ * Processing time budget (ms) — a best-effort guard.
  *
- * `fflate.unzipSync` is synchronous and cannot be preempted mid-inflate, so
- * this budget is enforced *between* entries: the reader records a start time
- * and its filter refuses further entries once the elapsed budget is spent.
- * Combined with DOCX_ENTRY_MAX + TOTAL_DECOMPRESSED_MAX (which bound the per-
- * entry and aggregate inflate work), this caps a single call to a bounded,
+ * Enforced between entries (the declared-size pre-filter) AND between every
+ * feed chunk of the bounded streaming inflate (S01-T9), so a hostile stream
+ * cannot run the inflate loop past the budget even mid-entry. Combined with
+ * DOCX_ENTRY_MAX + TOTAL_DECOMPRESSED_MAX (which bound the per-entry and
+ * aggregate inflate work), this caps a single call to a bounded,
  * sub-second-to-~seconds worst case rather than a hang.
  */
 export const PROCESSING_TIME_BUDGET_MS = 1500;

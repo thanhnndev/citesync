@@ -8,7 +8,7 @@
  *
  * Covers the T8 contract:
  *  - every valid fixture parses WITHOUT throwing and yields blocks[] > 0;
- *  - the four explicitly "bad" security samples throw the expected TYPED
+ *  - the five explicitly "bad" security samples throw the expected TYPED
  *    errors (ZipBombError / NotADocxError) — never a raw crash;
  *  - offset round-trip (R009): the known citation strings of each fixture
  *    select exactly via `block.text.slice(startOffset, endOffset)`;
@@ -51,9 +51,10 @@ function listFixtureFiles(): string[] {
 
 const ALL_FILES = listFixtureFiles();
 
-/** The four explicitly "bad" samples: typed error expected, never a hang. */
+/** The five explicitly "bad" samples: typed error expected, never a hang. */
 const BAD_SAMPLES: ReadonlyArray<{ file: string; error: new (...args: never[]) => Error }> = [
   { file: 'security/zip-bomb.docx', error: ZipBombError },
+  { file: 'security/lying-bomb.docx', error: ZipBombError },
   { file: 'security/truncated.docx', error: NotADocxError },
   { file: 'security/not-a-docx.zip', error: NotADocxError },
   { file: 'security/garbage.docx', error: NotADocxError },
@@ -90,10 +91,10 @@ const FIXTURES_WITH_FOOTNOTES = new Set([
 describe('fixture corpus — real .docx files parse end to end', () => {
   it('covers the full committed fixture corpus (manifest drift guard)', () => {
     // Lock the fixture inventory: README.md + minimal(1) + author-date(7) +
-    // documents(3) + security(5 incl. not-a-docx.zip) = 17 files.
-    expect(ALL_FILES).toHaveLength(17);
+    // documents(3) + security(6 incl. not-a-docx.zip + lying-bomb) = 18 files.
+    expect(ALL_FILES).toHaveLength(18);
     expect(VALID_FIXTURES).toHaveLength(12);
-    expect(BAD_SAMPLES).toHaveLength(4);
+    expect(BAD_SAMPLES).toHaveLength(5);
   });
 
   it('parses every valid fixture through the public API without throwing', () => {

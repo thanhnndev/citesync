@@ -150,6 +150,7 @@ describe('security — bad samples fail with typed errors, never hang', () => {
   it('never crashes with an untyped error on hostile input', () => {
     for (const rel of [
       'security/zip-bomb.docx',
+      'security/lying-bomb.docx',
       'security/truncated.docx',
       'security/not-a-docx.zip',
       'security/garbage.docx',
@@ -164,6 +165,39 @@ describe('security — bad samples fail with typed errors, never hang', () => {
         expect(err, rel).toBeInstanceOf(Error);
       }
       expect(threwTyped, rel).toBe(true);
+    }
+  });
+});
+
+describe('security — lying-declaration decompression bombs (S01-T9)', () => {
+  it('rejects the committed lying bomb (declared 100 B, inflates to 60 MiB) with ZipBombError', () => {
+    // The entry's central-directory record declares 100 bytes uncompressed
+    // while its real deflate stream expands to 60 MiB — fflate's sync unzip
+    // would silently truncate to the declared 100 bytes (MEM007), so only
+    // actual-output enforcement can reject it. The fixture file itself is
+    // ~62 KiB (a true bomb, not a large file).
+    expect(() => parseDocument(fixture('security/lying-bomb.docx'))).toThrow(ZipBombError);
+  });
+
+  it('rejects within a bounded wall-clock budget (no hang, no OOM)', () => {
+    const started = performance.now();
+    expect(() => parseDocument(fixture('security/lying-bomb.docx'))).toThrow(ZipBombError);
+    // The reader aborts as soon as ACTUAL bytes breach a cap (here the
+    // declared-vs-actual mismatch trips on the first feed chunk, well below
+    // the 60 MiB expansion). 10 s is a generous no-hang bound — a naive
+    // decompress-first reader would materialise 60 MiB+ and run far longer.
+    expect(performance.now() - started).toBeLessThan(10_000);
+  });
+
+  it('carries a diagnostic detail naming the lying entry and the breach', () => {
+    try {
+      parseDocument(fixture('security/lying-bomb.docx'));
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ZipBombError);
+      const e = err as ZipBombError;
+      expect(e.detail).toContain('word/lying.bin');
+      expect(e.detail).toMatch(/DOCX_ENTRY_MAX|declared-vs-actual mismatch/);
     }
   });
 });

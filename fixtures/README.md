@@ -40,11 +40,12 @@ Re-running the script rewrites byte-identical files.
 | fixture | expected reader behavior |
 |---------|--------------------------|
 | `security/zip-bomb.docx` | entry declares 60 MiB (> DOCX_ENTRY_MAX) -> `ZipBombError` before inflate |
+| `security/lying-bomb.docx` | entry declares 100 B but inflates to 60 MiB (lying declaration) -> `ZipBombError` on actual output (S01-T9) |
 | `security/truncated.docx` | central directory + EOCD removed -> `NotADocxError` (truncated ZIP) |
 | `security/not-a-docx.zip` | well-formed ZIP, missing required parts -> `NotADocxError` |
 | `security/garbage.docx` | non-ZIP bytes -> `NotADocxError` (no PK magic) |
 | `security/vba-sample.docx` | **valid** docx + `word/vbaProject.bin` + external rel targets; parses fine, macro/remote targets only noted |
 
 > `security/vba-sample.docx` is a VALID package (macro parts are note-and-skip, never
-> executed or decoded). Only the four explicitly "bad" samples are expected to throw
+> executed or decoded). Only the five explicitly "bad" samples are expected to throw
 > typed errors from the reader.

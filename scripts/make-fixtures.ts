@@ -638,6 +638,36 @@ function buildZipBomb(): Uint8Array {
   ]);
 }
 
+/**
+ * lying-bomb.docx (S01-T9): valid package + one entry that DECLARES 100 bytes
+ * uncompressed but whose real deflate stream expands to 60 MiB (far beyond
+ * DOCX_ENTRY_MAX). The file itself stays tiny (~60 KiB compressed) — the
+ * classic lying-declaration bomb. fflate's sync unzip would silently truncate
+ * this to the declared 100 bytes (MEM007); the hardened reader counts the
+ * ACTUAL inflated output and must raise ZipBombError.
+ */
+function buildLyingBomb(): Uint8Array {
+  const parts: Record<string, string | Uint8Array> = {
+    '[Content_Types].xml': contentTypesXml({}),
+    'word/document.xml': documentXml([{ runs: [t('Lying-bomb carrier document')] }]),
+  };
+  const docxEntries: ZipEntrySpec[] = Object.entries(parts).map(([name, content]) => ({
+    name,
+    data: typeof content === 'string' ? u8(content) : content,
+  }));
+  // 60 MiB of a single repeated byte — deflates to ~60 KiB, inflates to 60 MiB.
+  const inflated = new Uint8Array(60 * MIB);
+  inflated.fill(0x41); // 'A'
+  return handZip([
+    ...docxEntries,
+    {
+      name: 'word/lying.bin',
+      data: inflated,
+      declaredOriginalSize: 100, // lies: 100 B declared, 60 MiB actual
+    },
+  ]);
+}
+
 /** truncated.docx: local headers + data only, central directory + EOCD cut. */
 function buildTruncated(): Uint8Array {
   const parts: Record<string, string | Uint8Array> = {
@@ -746,6 +776,37 @@ function selfCheckZipBomb(bytes: Uint8Array): void {
   }
 }
 
+/**
+ * The lying bomb must (a) declare a tiny 100-byte size, (b) be truncated to
+ * that declared size by fflate's sync unzip (MEM007 — proving the archive is
+ * structured exactly as the lying-declaration attack), (c) still carry the
+ * required DOCX parts, and (d) stay small on disk (a real bomb, not a large
+ * file). The 60 MiB expansion is verified by construction: the authoring data
+ * IS 60 MiB of 'A' and is stored as its genuine deflate stream.
+ */
+function selfCheckLyingBomb(bytes: Uint8Array): void {
+  let declared = 0;
+  unzipSync(bytes, {
+    filter: (f) => {
+      if (f.name === 'word/lying.bin') declared = f.originalSize;
+      return true;
+    },
+  });
+  if (declared !== 100) {
+    throw new Error(`self-check: lying bomb declared size ${declared}, expected 100`);
+  }
+  const out = unzipSync(bytes, { filter: () => true });
+  if (out['word/lying.bin']!.length !== 100) {
+    throw new Error('self-check: lying entry was not truncated to declared size by sync unzip');
+  }
+  if (!('[Content_Types].xml' in out) || !('word/document.xml' in out)) {
+    throw new Error('self-check: lying bomb missing required parts');
+  }
+  if (bytes.length > 1 * MIB) {
+    throw new Error(`self-check: lying bomb is ${bytes.length} bytes — compression failed`);
+  }
+}
+
 /** The truncated archive must make fflate itself fail (EOCD scan). */
 function selfCheckTruncated(bytes: Uint8Array): void {
   if (bytes.length < 22) throw new Error('self-check: truncated fixture too small');
@@ -806,6 +867,15 @@ function main(): void {
     purpose: 'entry declares 60 MiB (> DOCX_ENTRY_MAX) -> ZipBombError before inflate',
   });
 
+  const lyingBomb = buildLyingBomb();
+  selfCheckLyingBomb(lyingBomb);
+  rows.push({
+    name: 'security/lying-bomb.docx',
+    size: lyingBomb.length,
+    kind: 'security',
+    purpose: 'entry declares 100 B but inflates to 60 MiB (lying declaration) -> ZipBombError on actual output',
+  });
+
   const truncated = buildTruncated();
   selfCheckTruncated(truncated);
   rows.push({
@@ -846,6 +916,7 @@ function main(): void {
   const toWrite: Array<{ name: string; bytes: Uint8Array }> = [
     ...PACKAGE_FIXTURES.map((s) => ({ name: s.name, bytes: buildDocx(s) })),
     { name: 'security/zip-bomb.docx', bytes: bomb },
+    { name: 'security/lying-bomb.docx', bytes: lyingBomb },
     { name: 'security/truncated.docx', bytes: truncated },
     { name: 'security/not-a-docx.zip', bytes: notADocx },
     { name: 'security/garbage.docx', bytes: garbage },
@@ -901,13 +972,14 @@ function main(): void {
     '| fixture | expected reader behavior |',
     '|---------|--------------------------|',
     '| `security/zip-bomb.docx` | entry declares 60 MiB (> DOCX_ENTRY_MAX) -> `ZipBombError` before inflate |',
+    '| `security/lying-bomb.docx` | entry declares 100 B but inflates to 60 MiB (lying declaration) -> `ZipBombError` on actual output (S01-T9) |',
     '| `security/truncated.docx` | central directory + EOCD removed -> `NotADocxError` (truncated ZIP) |',
     '| `security/not-a-docx.zip` | well-formed ZIP, missing required parts -> `NotADocxError` |',
     '| `security/garbage.docx` | non-ZIP bytes -> `NotADocxError` (no PK magic) |',
     '| `security/vba-sample.docx` | **valid** docx + `word/vbaProject.bin` + external rel targets; parses fine, macro/remote targets only noted |',
     '',
     '> `security/vba-sample.docx` is a VALID package (macro parts are note-and-skip, never',
-    '> executed or decoded). Only the four explicitly "bad" samples are expected to throw',
+    '> executed or decoded). Only the five explicitly "bad" samples are expected to throw',
     '> typed errors from the reader.',
   ];
   const readmePath = join(FIXTURES_DIR, 'README.md');

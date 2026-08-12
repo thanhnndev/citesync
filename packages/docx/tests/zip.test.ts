@@ -20,7 +20,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { zipSync } from 'fflate';
+import { deflateSync, zipSync } from 'fflate';
 
 import {
   DOCX_ENTRY_MAX,
@@ -91,6 +91,12 @@ interface CraftEntry {
    * actual payload — this is the attack surface the reader's filter guards.
    */
   declaredSize: number;
+  /**
+   * Declared UNCOMPRESSED size override (S01-T9): lets a deflate entry carry
+   * an honest compressed size while declaring a tiny uncompressed size — the
+   * lying-declaration bomb vector. Defaults to `declaredSize`.
+   */
+  declaredUncompressedSize?: number;
   /** Actual payload bytes written to the archive (tiny for bomb fixtures). */
   data: Uint8Array;
 }
@@ -119,7 +125,7 @@ function craftZip(entries: CraftEntry[]): Uint8Array {
     u16(0, local, 12); // mod date
     u32(0, local, 14); // crc (sync path never verifies)
     u32(e.declaredSize, local, 18); // compressed size (may lie)
-    u32(e.declaredSize, local, 22); // uncompressed size (may lie)
+    u32(e.declaredUncompressedSize ?? e.declaredSize, local, 22); // uncompressed size (may lie)
     u16(name.length, local, 26);
     u16(0, local, 28); // extra length
     local.set(name, 30);
@@ -137,7 +143,7 @@ function craftZip(entries: CraftEntry[]): Uint8Array {
     u16(0, central, 14); // mod date
     u32(0, central, 16); // crc
     u32(e.declaredSize, central, 20); // compressed size (may lie)
-    u32(e.declaredSize, central, 24); // uncompressed size (may lie)
+    u32(e.declaredUncompressedSize ?? e.declaredSize, central, 24); // uncompressed size (may lie)
     u16(name.length, central, 28);
     u16(0, central, 30); // extra length
     u16(0, central, 32); // comment length
@@ -424,6 +430,61 @@ describe('safeZipRead — ZipBombError (bounds guard, R016)', () => {
       expect(e.detail).toContain('DOCX_ENTRY_MAX');
       expect(e.detail).toContain('word/document.xml');
     }
+  });
+
+  it('rejects a deflate entry whose ACTUAL output exceeds its DECLARED size (lying declaration)', () => {
+    // S01-T9: the central directory declares a tiny uncompressed size (10 B)
+    // while the real deflate stream expands to 200 B. fflate's sync unzip
+    // would silently truncate the output to the declared size (MEM007), so
+    // only actual-output enforcement can catch this. The compressed size is
+    // declared honestly so the stream is intact and the mismatch is the sole
+    // anomaly.
+    const payload = deflateSync(enc.encode('A'.repeat(200)));
+    const detail = thrownDetail(
+      () =>
+        safeZipRead(
+          craftZip([
+            {
+              name: 'word/document.xml',
+              method: 8,
+              declaredSize: payload.length, // honest compressed size
+              declaredUncompressedSize: 10, // lies: 10 B declared, 200 B actual
+              data: payload,
+            },
+          ]),
+        ),
+      ZipBombError,
+    );
+    expect(detail).toMatch(/declared-vs-actual mismatch/);
+    expect(detail).toContain('word/document.xml');
+  });
+
+  it('rejects a deflate entry whose ACTUAL output exceeds DOCX_ENTRY_MAX (bounded time/memory)', () => {
+    // S01-T9: 51 MiB of 'A' deflates to ~50 KiB but the entry declares only
+    // DOCX_ENTRY_MAX (at-cap, so the declared-size filter lets it through).
+    // The hardened reader aborts at cap+1 ACTUAL bytes with ZipBombError —
+    // never materialising the full expansion, never hanging. Vitest's
+    // default test timeout plus the explicit wall-clock bound are the guards.
+    const payload = deflateSync(new Uint8Array(51 * MIB).fill(0x41));
+    const started = performance.now();
+    const detail = thrownDetail(
+      () =>
+        safeZipRead(
+          craftZip([
+            {
+              name: 'word/big.bin',
+              method: 8,
+              declaredSize: payload.length, // honest compressed size
+              declaredUncompressedSize: DOCX_ENTRY_MAX, // at-cap declaration
+              data: payload,
+            },
+          ]),
+        ),
+      ZipBombError,
+    );
+    expect(detail).toMatch(/DOCX_ENTRY_MAX/);
+    expect(detail).toContain('word/big.bin');
+    expect(performance.now() - started).toBeLessThan(10_000);
   });
 });
 
