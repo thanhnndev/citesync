@@ -86,6 +86,16 @@ export interface DocumentBlock {
   style?: string;
   /** Source location of this block. */
   source: SourceLocation;
+  /**
+   * S01 extension (additive — §15 fields unchanged): raw field-instruction
+   * markers preserved from the block's runs, one entry per field, in document
+   * order (research §5c). Word/Zotero/Mendeley structured citations are
+   * carried as `w:instrText`/`w:fldSimple/@w:instr` codes (e.g.
+   * `ADDIN ZOTERO_ITEM CSL_CITATION {...}`, `CITATION Smith22 \l 1033`); S03
+   * uses these to detect field-backed citations (identity backbone) while the
+   * cached field RESULT stays in `text`. Absent when the block has no fields.
+   */
+  fields?: string[];
 }
 
 /**
@@ -164,17 +174,151 @@ export interface SourceMap {
 }
 
 /**
- * §17 — bibliography section placeholder. S02 owns the concrete shape; S01
- * never fills this (AcademicDocument.bibliography stays undefined until S02).
- * `heading`/`confidence` mirror the §17 bibliography-detection output.
+ * §17 — bibliography section (concrete shape, owned by S02; D009).
+ *
+ * S01 never fills this (AcademicDocument.bibliography stays undefined until
+ * S02 detection runs). The section is populated only when detection produced
+ * a confident result (`outcome === 'detected'`); otherwise the ask-user flow
+ * communicates via `BibliographyDetectionResult` and this stays undefined.
+ *
+ * All fields are ADDITIVE extensions of the §17 stub (`heading`/`confidence`
+ * mirror the §17 bibliography-detection output); `entries` is preserved and
+ * reserved for S03's parsed reference entries — it stays unspecified until
+ * S03 fills it.
+ *
+ * Span semantics: `blockIds` is an ORDERED list of `DocumentBlock.id` values
+ * forming the section, heading block first, followed by the reference-like
+ * blocks in document order. The section text span is therefore
+ * `blocks[firstIndex]` … `blocks[lastIndex]` where the ids resolve in
+ * `AcademicDocument.blocks`; S03's entry-parsing scope is exactly this list.
  */
 export interface BibliographySection {
+  /**
+   * Detection outcome. `'detected'` → confident section found (blockIds
+   * present); `'below-threshold'` → heading candidates exist but no single
+   * one cleared the conservative threshold (candidates present, blockIds
+   * absent); `'none'` → no bibliography signal present at all.
+   */
+  outcome: 'detected' | 'below-threshold' | 'none';
   /** Detected bibliography heading text (§17), e.g. "Tài liệu tham khảo". */
   heading?: string;
-  /** Detection confidence in [0, 1] (§17). */
+  /**
+   * Detection confidence in [0, 1] (§17). Present when `outcome !== 'none'`;
+   * for `'detected'` it is the winning candidate's score, for
+   * `'below-threshold'` the best candidate's score (below the conservative
+   * threshold — the engine NEVER guesses below it, R004 / PRD §17).
+   */
   confidence?: number;
-  /** Reserved: reference entries. S02 defines the entry shape. */
+  /**
+   * Ordered ids of the blocks forming the section: heading block first, then
+   * the following reference-like blocks in document order. This is S03's
+   * entry-parsing scope. Present when `outcome === 'detected'`; absent
+   * otherwise.
+   */
+  blockIds?: string[];
+  /**
+   * Scored candidate bibliography headings for the pick-a-section ask-user
+   * flow (M003). Only meaningful when `outcome === 'below-threshold'`;
+   * undefined otherwise.
+   */
+  candidates?: BibliographyCandidate[];
+  /**
+   * Reserved: reference entries. S03 (reference-entry parsing) defines and
+   * fills this; S02 leaves it unspecified/undefined.
+   */
   entries?: unknown[];
+}
+
+/**
+ * §17 — one candidate bibliography heading for the ask-user flow.
+ *
+ * Produced when no single heading candidate clears the conservative
+ * threshold; the M003 "select the bibliography section" UI lets the user pick
+ * among these instead of the engine guessing.
+ */
+export interface BibliographyCandidate {
+  /** The `DocumentBlock.id` of the candidate heading block. */
+  blockId: string;
+  /** The heading's visible text (block.text). */
+  heading: string;
+  /**
+   * Which signal raised this candidate. `'exact'` — known bibliography term
+   * match (References, Tài liệu tham khảo, …); `'style'` — heading style;
+   * `'position'` — document-end position; `'reference-segment'` — followed by
+   * reference-like paragraphs; `'none'` — no positive signal (scored low).
+   */
+  headingType:
+    | 'exact'
+    | 'style'
+    | 'position'
+    | 'reference-segment'
+    | 'none';
+  /**
+   * 0-based index of the candidate block within `AcademicDocument.blocks`
+   * (document order), so the UI can jump to / highlight it (R009-style
+   * navigation).
+   */
+  startIndex: number;
+  /** Candidate score in [0, 1] (below the conservative threshold). */
+  confidence: number;
+}
+
+/**
+ * §17 — pure detectBibliography() return contract (D009).
+ *
+ * A discriminated union so the caller can never mistake a below-threshold
+ * result for a detection:
+ *  - `{ outcome: 'detected'; section }` — confident section found.
+ *  - `{ outcome: 'below-threshold'; candidates; confidence }` — heading
+ *    candidates exist but none cleared the conservative threshold: return the
+ *    ask-user outcome, NEVER silently guess (R004 / PRD §17).
+ *  - `{ outcome: 'none' }` — no bibliography signal present.
+ *
+ * Threshold rule: a conservative constant threshold (BIBLIO_THRESHOLD = 0.6)
+ * separates 'detected' from 'below-threshold'; below it the engine never
+ * fills `AcademicDocument.bibliography` and never guesses a section.
+ */
+export type BibliographyDetectionResult =
+  | { outcome: 'detected'; section: BibliographySection }
+  | {
+      outcome: 'below-threshold';
+      candidates: BibliographyCandidate[];
+      confidence: number;
+    }
+  | { outcome: 'none' };
+
+/**
+ * S01 extension (additive): one isolated, non-fatal parse issue (§88).
+ *
+ * Malformed parts/blocks are recorded here instead of thrown, so a broken
+ * paragraph/table/note never crashes the full-document parse.
+ */
+export interface ParseIssue {
+  /** The part the issue occurred in, e.g. "word/document.xml". */
+  part: string;
+  /** Machine-readable code, e.g. "malformed-content" | "not-xml". */
+  code: string;
+  /** Human-readable detail. */
+  message: string;
+}
+
+/**
+ * S01 extension (additive): security-relevant notes for parts this reader
+ * deliberately does NOT execute or follow (R002/R019/R022, §87).
+ */
+export interface DocumentSecurityInfo {
+  /**
+   * True when the package contains a macro-bearing part (word/vbaProject.bin
+   * or any part whose path contains "vba" or "macro"). The bytes are never
+   * decoded or executed.
+   */
+  macrosPresent: boolean;
+  /**
+   * External/remote relationship targets found in the package rels
+   * (TargetMode="External" or an absolute scheme/UNC target), recorded
+   * first-seen. Never fetched or followed.
+   */
+  remoteTargets?: string[];
 }
 
 /**
@@ -226,4 +370,14 @@ export interface AcademicDocument {
   /** Filled by S03 (citation extraction). Empty array until then. */
   citations: CitationOccurrence[];
   sourceMap: SourceMap;
+  /**
+   * S01 extension (additive): isolated non-fatal parse issues (§88). Absent
+   * when every part parsed cleanly.
+   */
+  parseIssues?: ParseIssue[];
+  /**
+   * S01 extension (additive): security notes (macros/remote content present
+   * but never executed or followed). Absent when nothing was flagged.
+   */
+  security?: DocumentSecurityInfo;
 }

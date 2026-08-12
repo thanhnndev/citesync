@@ -9,6 +9,8 @@
 export type {
   AcademicDocument,
   AuthorDateCitationItem,
+  BibliographyCandidate,
+  BibliographyDetectionResult,
   BibliographySection,
   BlockSourceMap,
   CitationItem,
@@ -16,7 +18,9 @@ export type {
   DocumentBlock,
   DocumentBlockType,
   DocumentMetadata,
+  DocumentSecurityInfo,
   NumericCitationItem,
+  ParseIssue,
   RunSpan,
   SourceLocation,
   SourceMap,
