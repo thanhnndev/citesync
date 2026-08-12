@@ -244,6 +244,13 @@ _detected section without entry blocks — parsing scope is exactly S02's blockI
 - `r0` @ `doc-p4[0,113)` conf 0.9412 → authors=[Nguyen, V. A.] year=2015 title="Phương pháp trích dẫn tự động trong văn bản khoa học" container="Nhà xuất bản Đại học Quốc gia Hà Nội"
 - `r1` @ `doc-p5[0,93)` conf 1 → authors=[Do, Q.] year=2018 title="Cấu trúc dữ liệu trích dẫn có dấu" container="Tạp chí Khoa học và Công nghệ" identifiers={"volume":"10","issue":"1","pages":"5-15"}
 
+## S04 match-state ground truth (KNOWN_MATCHES)
+
+The §27 match-state map the S04 pipeline must produce per fixture — single source of truth:
+`scripts/fixture-ground-truth-matches.ts`, asserted byte-stably by
+`packages/docx/tests/matching.test.ts` (any change to the scorer, the thresholds, the
+fixture bytes, the model shape or the orchestration policy drifts these tables).
+
 ### minimal.docx (match states)
 
 - `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]

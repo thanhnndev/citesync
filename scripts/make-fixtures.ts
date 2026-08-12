@@ -36,7 +36,8 @@ import { fileURLToPath } from 'node:url';
 
 import { deflateSync, unzipSync, zipSync } from 'fflate';
 
-import { KNOWN_OCCURRENCES, KNOWN_MATCHES } from './fixture-ground-truth.js';
+import { KNOWN_OCCURRENCES } from './fixture-ground-truth.js';
+import { KNOWN_MATCHES } from './fixture-ground-truth-matches.js';
 import { KNOWN_REFERENCES } from './fixture-ground-truth-references.js';
 
 const MIB = 1024 * 1024;
@@ -1078,6 +1079,15 @@ function renderGroundTruth(): string[] {
     }
     lines.push('');
   }
+  lines.push(
+    '## S04 match-state ground truth (KNOWN_MATCHES)',
+    '',
+    'The §27 match-state map the S04 pipeline must produce per fixture — single source of truth:',
+    '`scripts/fixture-ground-truth-matches.ts`, asserted byte-stably by',
+    '`packages/docx/tests/matching.test.ts` (any change to the scorer, the thresholds, the',
+    'fixture bytes, the model shape or the orchestration policy drifts these tables).',
+    '',
+  );
   for (const [name, map] of Object.entries(KNOWN_MATCHES)) {
     lines.push(`### ${name} (match states)`);
     lines.push('');
