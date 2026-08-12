@@ -125,6 +125,19 @@ export type { ReferenceFeatures } from './references/index.js';
 // (M003) — the pure core behind AcademicDocument.bibliography.
 export { detectBibliography, BIBLIOGRAPHY_THRESHOLD } from './bibliography/detect.js';
 
+// S04 (T1): §26 tunable weights + §27/§79 thresholds + the §25 tier-ladder /
+// §26 weighted per-citation×per-entry scorer (the match-map orchestration
+// `buildMatchMap` lands in S04-T2).
+export {
+  MATCH_WEIGHTS,
+  MATCH_THRESHOLD,
+  POSSIBLE_MISMATCH_THRESHOLD,
+  MATCH_MARGIN,
+} from './match/index.js';
+export type { MatchWeights } from './match/index.js';
+export { scoreCitationAgainstEntry, AUTHOR_TIER } from './match/index.js';
+export type { CitationScore } from './match/index.js';
+
 // The shared §15 model contract (re-exported for one-import convenience).
 export type {
   AcademicDocument,
@@ -134,11 +147,17 @@ export type {
   BibliographySection,
   BlockSourceMap,
   CitationItem,
+  CitationMatchResult,
   CitationOccurrence,
   DocumentBlock,
   DocumentBlockType,
   DocumentMetadata,
   DocumentSecurityInfo,
+  EntryMatchStatus,
+  EntryMatchStatusRow,
+  MatchMap,
+  MatchReason,
+  MatchState,
   NumericCitationItem,
   ParseIssue,
   PersonName,

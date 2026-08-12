@@ -472,6 +472,113 @@ export interface ReferenceParseIssue {
 }
 
 /**
+ * §27 — match state of a citation→reference relationship (S04 owns filling).
+ *
+ * S04 maps every §20 citation occurrence to a §21 bibliography entry or to a
+ * "no-good-target" state. The four states are the verbatim §27 union; their
+ * philosophy is §79's conservative bias — prefer "I am uncertain" over
+ * "This is wrong" when evidence is insufficient, so a thin/ambiguous signal
+ * yields AMBIGUOUS (or POSSIBLE_MISMATCH), never a confident wrong MATCHED.
+ */
+export type MatchState =
+  | 'MATCHED'
+  | 'MISSING_REFERENCE'
+  | 'AMBIGUOUS'
+  | 'POSSIBLE_MISMATCH';
+
+/** §27 — bibliography-entry usage status (reverse of the citation map). */
+export type EntryMatchStatus = 'CITED' | 'UNUSED' | 'AMBIGUOUS_USAGE';
+
+/**
+ * §25/§26 — short machine-readable evidence codes on a citation match result
+ * (R009-style evidence for the M003 issue surface). The S04 scorer emits the
+ * author/year/suffix/page codes; the orchestrator emits the state-level ones
+ * ('no-entry' / 'ambiguous'). Extensible — codes are additive.
+ */
+export type MatchReason =
+  /** Author matched on the exact (normalized) key tier. */
+  | 'exact'
+  /** Author matched on the normalized tier (subsumed by `exact` in this key scheme). */
+  | 'normalized'
+  /** Author matched only on the diacritic-stripped tier (§25 tier 3). */
+  | 'diacritic-insensitive'
+  /** Author matched only on the initial-compatible tier (§25 tier 4). */
+  | 'initials'
+  /** Author matched only on the fuzzy tier (§25 tier 5 — no stored key). */
+  | 'fuzzy'
+  /** Citation year equals entry year. */
+  | 'year-match'
+  /** Years present and different, or the same year with conflicting suffixes. */
+  | 'year-mismatch'
+  /** Citation or entry lacks a year signal (n.d.). */
+  | 'no-year'
+  /** Same-year disambiguation suffix agreed / partially present. */
+  | 'year-suffix'
+  /** No author tier matched at all. */
+  | 'author-mismatch'
+  /** Citation page found in the entry's page identifiers. */
+  | 'page-match'
+  /** At least one additional cited author matched an entry author. */
+  | 'additional-authors'
+  /** No bibliography target exists (→ MISSING_REFERENCE). */
+  | 'no-entry'
+  /** Multiple candidates tie above the threshold (→ AMBIGUOUS). */
+  | 'ambiguous';
+
+/**
+ * §27 — one citation→reference match result (S04 fills; M003 consumes).
+ *
+ * `relationship` is the §27 state; `score` is the §26 deterministic [0,1]
+ * match score; `tier` is the §25 author tier reached for the first author
+ * (1 exact, 2 normalized, 3 diacritic-insensitive, 4 initials, 5 none);
+ * `confidence` is the state confidence the orchestrator derives from
+ * score/threshold evidence (R008 — same inputs, same value).
+ */
+export interface CitationMatchResult {
+  /** The `CitationOccurrence.id` this result refers to. */
+  citationId: string;
+  /** The occurrence's source region (R009 evidence — jump to the text). */
+  citationSource: SourceLocation;
+  /** §27 relationship state. */
+  relationship: MatchState;
+  /** The matched `ReferenceEntry.id`, when the state resolves one. */
+  matchedEntryId?: string;
+  /** §26 deterministic match score in [0, 1] (4-decimal rounded). */
+  score: number;
+  /** §25 author tier reached for the first author (1..5). */
+  tier: number;
+  /** State confidence in [0, 1] (derived deterministically). */
+  confidence: number;
+  /** Short evidence codes explaining the decision. */
+  reasons: MatchReason[];
+}
+
+/** §27 — one bibliography entry's usage status row. */
+export interface EntryMatchStatusRow {
+  /** The `ReferenceEntry.id` this row refers to. */
+  entryId: string;
+  /** §27 status: CITED / UNUSED / AMBIGUOUS_USAGE. */
+  status: EntryMatchStatus;
+}
+
+/**
+ * §27 — the match-state map S04 produces for one document.
+ *
+ * `citations` is ordered exactly like `AcademicDocument.citations` (c0..cN,
+ * document order — R008); `entryStatus` mirrors `bibliography.entries` order
+ * (r0..). Deterministic: same document bytes → same map, byte-identically
+ * (R008). `version: 1` bumps only on a breaking shape change.
+ */
+export interface MatchMap {
+  /** Schema version — bump only on a breaking shape change. Currently 1. */
+  version: 1;
+  /** One result per §20 citation occurrence, in document order. */
+  citations: CitationMatchResult[];
+  /** One usage-status row per §21 bibliography entry, in section order. */
+  entryStatus: EntryMatchStatusRow[];
+}
+
+/**
  * §15 — the AcademicDocument contract (verbatim), the fixed handoff shape for
  * S02–S04. S01 fills `metadata`, `blocks`, `sourceMap` only; `bibliography`
  * (S02) and `citations` (S03) are contract stubs left empty/undefined.
@@ -483,6 +590,14 @@ export interface AcademicDocument {
   bibliography?: BibliographySection;
   /** Filled by S03 (citation extraction). Empty array until then. */
   citations: CitationOccurrence[];
+  /**
+   * S04 extension (additive): the §27 match-state map — every citation
+   * occurrence mapped to a reference entry or a no-good-target state, plus
+   * the bibliography-side entry statuses. Filled by the S04 matcher, which
+   * runs AFTER `citations` and `bibliography.entries` are populated (order
+   * matters in buildModel). Absent until the matcher runs.
+   */
+  matchMap?: MatchMap;
   /**
    * S03 extension (additive): isolated non-fatal reference-parsing issues
    * (§88) — one per bibliography entry whose grammar parse failed. The entry

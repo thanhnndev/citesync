@@ -133,4 +133,32 @@ export const KNOWN_REFERENCES: Record<string, KnownReferenceEntry[]> = {
       parseConfidence: 1,
     }),
   ],
+  // S04-T1: same author, two years — year-weight calibration fixture (two
+  // entries by the SAME author in DIFFERENT years).
+  'match/same-author-two-years.docx': [
+    E({
+      id: 'r0',
+      raw: 'Doe, J. (2018). Citation practices in digital archives. Journal of Citation Science, 9(1), 10-22.',
+      index: 0,
+      authors: [author({ originalName: 'Doe, J.', family: 'Doe', given: 'J.', key: { exact: 'doe j', diacriticInsensitive: 'doe j', initials: 'dj' } })],
+      year: 2018,
+      title: 'Citation practices in digital archives',
+      containerTitle: 'Journal of Citation Science',
+      identifiers: { volume: '9', issue: '1', pages: '10-22' },
+      source: { blockId: 'doc-p4', startOffset: 0, endOffset: 97 },
+      parseConfidence: 1,
+    }),
+    E({
+      id: 'r1',
+      raw: 'Doe, J. (2021). Advances in digital citation analysis. Journal of Citation Science, 12(4), 100-115.',
+      index: 1,
+      authors: [author({ originalName: 'Doe, J.', family: 'Doe', given: 'J.', key: { exact: 'doe j', diacriticInsensitive: 'doe j', initials: 'dj' } })],
+      year: 2021,
+      title: 'Advances in digital citation analysis',
+      containerTitle: 'Journal of Citation Science',
+      identifiers: { volume: '12', issue: '4', pages: '100-115' },
+      source: { blockId: 'doc-p5', startOffset: 0, endOffset: 99 },
+      parseConfidence: 1,
+    }),
+  ],
 };

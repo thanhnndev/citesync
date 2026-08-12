@@ -374,6 +374,31 @@ export const KNOWN_OCCURRENCES: Record<string, KnownCitationOccurrence[]> = {
     }),
   ],
 
+  // S04-T1: same author, two years — year-weight calibration fixture. The
+  // entry blocks' "Doe, J. (2018)" narrative tails are themselves citations.
+  'match/same-author-two-years.docx': [
+    O({
+      id: 'c0', raw: 'Doe (2018)', family: 'author-date',
+      items: [item({ firstAuthor: 'Doe', authors: ['Doe'], year: 2018 })],
+      source: { blockId: 'doc-p1', startOffset: 0, endOffset: 10 }, confidence: 0.9,
+    }),
+    O({
+      id: 'c1', raw: '(Doe, 2021)', family: 'author-date',
+      items: [item({ firstAuthor: 'Doe', authors: ['Doe'], year: 2021 })],
+      source: { blockId: 'doc-p2', startOffset: 0, endOffset: 11 }, confidence: 1,
+    }),
+    O({
+      id: 'c2', raw: 'Doe, J. (2018)', family: 'author-date',
+      items: [item({ firstAuthor: 'Doe', authors: ['Doe', 'J.'], year: 2018 })],
+      source: { blockId: 'doc-p4', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c3', raw: 'Doe, J. (2021)', family: 'author-date',
+      items: [item({ firstAuthor: 'Doe', authors: ['Doe', 'J.'], year: 2021 })],
+      source: { blockId: 'doc-p5', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+  ],
+
   // Macro-carriage sample: no citations.
   'security/vba-sample.docx': [],
 };

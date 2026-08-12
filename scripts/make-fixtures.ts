@@ -688,6 +688,29 @@ const PACKAGE_FIXTURES: DocxSpec[] = [
       { runs: [t('Acknowledgments: funded by the research council.')] },
     ],
   },
+
+  // ── match corpus (S04 §25/§26/§27 benchmark calibration) ────────────────
+  // S04-T1: the first benchmark-calibration fixture — a detected bibliography
+  // with TWO entries by the SAME author in DIFFERENT years, and two body
+  // citations whose authors match the entries. Proves the §26 year weight
+  // keeps a wrong-year pairing from ever becoming a confident MATCHED (§79):
+  // a "Doe (2018)" citation scores 1.0 against the 2018 entry but only 0.6
+  // (author 0.40 + additional 0.15 + other 0.05, no year/suffix credit)
+  // against the 2021 entry — strictly below MATCH_THRESHOLD 0.7.
+  {
+    name: 'match/same-author-two-years.docx',
+    title: 'Same author, two years — year-weight calibration',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Literature Review')] },
+      { runs: [t('Doe (2018) described citation practices in digital archives.')] },
+      { runs: [t('(Doe, 2021) extended that analysis with new evidence.')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('Doe, J. (2018). Citation practices in digital archives. Journal of Citation Science, 9(1), 10-22.')] },
+      { runs: [t('Doe, J. (2021). Advances in digital citation analysis. Journal of Citation Science, 12(4), 100-115.')] },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1136,6 +1159,12 @@ function main(): void {
     '| `bibliography/style-position.docx` | custom heading text via Heading1 style + late position + reference-like entries (weighted-signal path, no exact text) |',
     '| `bibliography/no-bibliography.docx` | narrative only, no heading/reference segment -> outcome `none` |',
     '| `bibliography/ambiguous.docx` | `References` heading but non-reference-like short paragraphs following -> below-threshold/ask-user path |',
+    '',
+    '## Corpus (match — S04 §25/§26/§27 benchmark calibration)',
+    '',
+    '| fixture | purpose |',
+    '|---------|---------|',
+    '| `match/same-author-two-years.docx` | same author, two years: a `Doe (2018)` citation matches the 2018 entry (score 1.0) but scores 0.6 (< MATCH_THRESHOLD 0.7) against the 2021 entry — a wrong-year pairing can never be MATCHED (§79) |',
     '',
     '## Security samples',
     '',

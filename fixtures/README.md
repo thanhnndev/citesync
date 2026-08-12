@@ -45,6 +45,12 @@ Re-running the script rewrites byte-identical files.
 | `bibliography/no-bibliography.docx` | narrative only, no heading/reference segment -> outcome `none` |
 | `bibliography/ambiguous.docx` | `References` heading but non-reference-like short paragraphs following -> below-threshold/ask-user path |
 
+## Corpus (match — S04 §25/§26/§27 benchmark calibration)
+
+| fixture | purpose |
+|---------|---------|
+| `match/same-author-two-years.docx` | same author, two years: a `Doe (2018)` citation matches the 2018 entry (score 1.0) but scores 0.6 (< MATCH_THRESHOLD 0.7) against the 2021 entry — a wrong-year pairing can never be MATCHED (§79) |
+
 ## Security samples
 
 | fixture | expected reader behavior |
@@ -163,6 +169,13 @@ bytes, the model shape, the grammar or the normalization drifts these tables).
 
 - `c0` `(Doe, 2017)` @ `doc-p2[12,23)` author-date conf 1 → {"firstAuthor":"Doe","authors":["Doe"],"year":2017}
 
+### match/same-author-two-years.docx
+
+- `c0` `Doe (2018)` @ `doc-p1[0,10)` author-date conf 0.9 → {"firstAuthor":"Doe","authors":["Doe"],"year":2018}
+- `c1` `(Doe, 2021)` @ `doc-p2[0,11)` author-date conf 1 → {"firstAuthor":"Doe","authors":["Doe"],"year":2021}
+- `c2` `Doe, J. (2018)` @ `doc-p4[0,14)` author-date conf 0.837 → {"firstAuthor":"Doe","authors":["Doe","J."],"year":2018}
+- `c3` `Doe, J. (2021)` @ `doc-p5[0,14)` author-date conf 0.837 → {"firstAuthor":"Doe","authors":["Doe","J."],"year":2021}
+
 ### security/vba-sample.docx
 
 _no citations_
@@ -188,4 +201,9 @@ _detected section without entry blocks — parsing scope is exactly S02's blockI
 - `r0` @ `doc-p6[0,98)` conf 1 → authors=[Doe, J.] year=2017 title="Citation practice in digital documents" container="Journal of Citation Science" identifiers={"volume":"12","issue":"3","pages":"45-60"}
 - `r1` @ `doc-p7[0,69)` conf 0.9412 → authors=[Johnson, A.] year=2018 title="Structured citations" container="Cambridge University Press"
 - `r2` @ `doc-p8[0,73)` conf 1 → authors=[Roe, M.] year=2019 title="Offsets and evidence" container="ACM Computing Surveys" identifiers={"volume":"51","issue":"2","pages":"1-30"}
+
+### match/same-author-two-years.docx (references)
+
+- `r0` @ `doc-p4[0,97)` conf 1 → authors=[Doe, J.] year=2018 title="Citation practices in digital archives" container="Journal of Citation Science" identifiers={"volume":"9","issue":"1","pages":"10-22"}
+- `r1` @ `doc-p5[0,99)` conf 1 → authors=[Doe, J.] year=2021 title="Advances in digital citation analysis" container="Journal of Citation Science" identifiers={"volume":"12","issue":"4","pages":"100-115"}
 

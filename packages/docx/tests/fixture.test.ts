@@ -83,6 +83,7 @@ const KNOWN_CITATIONS: Record<string, string[]> = {
   'bibliography/style-position.docx': ['Doe, J. (2017).', 'Johnson, A. (2018).', 'Roe, M. (2019).'],
   'bibliography/no-bibliography.docx': ['Smith (2020)', '(Nguyen & Tran, 2021)'],
   'bibliography/ambiguous.docx': ['(Doe, 2017)'],
+  'match/same-author-two-years.docx': ['Doe (2018)', '(Doe, 2021)', 'Doe, J. (2018).', 'Doe, J. (2021).'],
   'security/vba-sample.docx': [], // macro carriage text only — no citations
 };
 
@@ -96,10 +97,10 @@ const FIXTURES_WITH_FOOTNOTES = new Set([
 describe('fixture corpus — real .docx files parse end to end', () => {
   it('covers the full committed fixture corpus (manifest drift guard)', () => {
     // Lock the fixture inventory: README.md + minimal(1) + author-date(7) +
-    // documents(3) + bibliography(5) + security(6 incl. not-a-docx.zip +
-    // lying-bomb) = 23 files.
-    expect(ALL_FILES).toHaveLength(23);
-    expect(VALID_FIXTURES).toHaveLength(17);
+    // documents(3) + bibliography(5) + match(1, S04-T1) + security(6 incl.
+    // not-a-docx.zip + lying-bomb) = 24 files.
+    expect(ALL_FILES).toHaveLength(24);
+    expect(VALID_FIXTURES).toHaveLength(18);
     expect(BAD_SAMPLES).toHaveLength(5);
   });
 
