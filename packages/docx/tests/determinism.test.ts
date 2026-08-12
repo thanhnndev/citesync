@@ -172,6 +172,66 @@ describe('determinism (R008) — S03 citations + bibliography entries stability'
   });
 });
 
+describe('determinism (R008) — S04 matchMap stability', () => {
+  it('keeps doc.matchMap deep-equal and byte-identical across parses (all fixtures)', () => {
+    // Mirrors the S03 citations/entries lock: the §27 map must be a pure
+    // function of the bytes. Covers BOTH groups — the detected-bibliography
+    // fixtures (real relationship states, incl. AMBIGUOUS/POSSIBLE_MISMATCH
+    // rows) and the absent/entry-less ones (all MISSING_REFERENCE).
+    for (const rel of VALID_FIXTURES) {
+      const bytes = readFileSync(join(FIXTURES_DIR, rel));
+      const a = parseDocument(bytes);
+      const b = parseDocument(bytes);
+      // 1:1 §27 map: every §20 citation occurrence has exactly one row.
+      // vba-sample (no citations, no entries) legitimately emits no map.
+      if (b.matchMap === undefined) {
+        expect(b.citations.length, rel).toBe(0);
+        expect(a.matchMap, rel).toBeUndefined();
+        continue;
+      }
+      expect(b.matchMap!.citations.length, rel).toBe(b.citations.length);
+      expect(b.matchMap, rel).toEqual(a.matchMap);
+      expect(JSON.stringify(b.matchMap), rel).toBe(JSON.stringify(a.matchMap));
+    }
+  });
+
+  it('locks the no-target class — entry-less fixtures are every citation MISSING_REFERENCE', () => {
+    // §79/R004: no detected bibliography (or a section whose parse scope
+    // yielded no entries) must never silently guess — score 0, tier 5,
+    // reasons ['no-entry']. Real-state fixtures (entries.length > 0) are
+    // pinned exactly by matching.test.ts against KNOWN_MATCHES.
+    for (const rel of VALID_FIXTURES) {
+      const doc = parseDocument(readFileSync(join(FIXTURES_DIR, rel)));
+      const entries = doc.bibliography?.entries ?? [];
+      if (entries.length > 0) continue;
+      for (const row of doc.matchMap?.citations ?? []) {
+        expect(row.relationship, `${rel} ${row.citationId}`).toBe('MISSING_REFERENCE');
+        expect(row.score, `${rel} ${row.citationId}`).toBe(0);
+        expect(row.tier, `${rel} ${row.citationId}`).toBe(5);
+        expect(row.confidence, `${rel} ${row.citationId}`).toBe(0);
+        expect(row.reasons, `${rel} ${row.citationId}`).toEqual(['no-entry']);
+      }
+    }
+  });
+
+  it('stays byte-identical on the detected-bibliography fixtures with real states', () => {
+    for (const rel of VALID_FIXTURES) {
+      if (EXPECTED_BIBLIOGRAPHY[rel] !== 'detected') continue;
+      const bytes = readFileSync(join(FIXTURES_DIR, rel));
+      const a = JSON.stringify(parseDocument(bytes).matchMap);
+      const b = JSON.stringify(parseDocument(bytes).matchMap);
+      expect(a, rel).toBe(b);
+      // Sanity: every row carries one of the four §27 states with a [0,1] score.
+      const rows = parseDocument(bytes).matchMap!.citations;
+      for (const row of rows) {
+        expect(['MATCHED', 'MISSING_REFERENCE', 'AMBIGUOUS', 'POSSIBLE_MISMATCH'], `${rel} ${row.citationId}`).toContain(row.relationship);
+        expect(row.score, `${rel} ${row.citationId}`).toBeGreaterThanOrEqual(0);
+        expect(row.score, `${rel} ${row.citationId}`).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+});
+
 describe('determinism (R008) — committed golden anchor', () => {
   it('locks the minimal.docx shape against tests/golden/minimal.golden.json', () => {
     const bytes = readFileSync(join(FIXTURES_DIR, 'minimal.docx'));
