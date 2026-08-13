@@ -3,9 +3,13 @@ import { defineConfig } from 'vitest/config';
 // Root Vitest config. Projects (one per npm workspace package) are declared
 // here via `test.projects` — the non-deprecated mechanism since Vitest 3.2.
 // vitest.workspace.ts mirrors the same list for tooling that still reads it.
+//
+// Glob 'apps/*' resolves apps/web to its own vitest.config.ts (Vitest 4
+// picks up the per-directory config file), which scopes `include` to
+// tests/**/*.test.ts so Playwright e2e specs are never collected by vitest.
 export default defineConfig({
   test: {
     environment: 'node',
-    projects: ['packages/*'],
+    projects: ['packages/*', 'apps/*'],
   },
 });

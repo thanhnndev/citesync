@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Browser app: base lib is ES2022-only; the app needs DOM + WebWorker.
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "jsx": "react-jsx",
+    // Bundler resolution — NodeNext would force `.js` suffixes on relative
+    // imports that vite/rolldown resolve extensionless.
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    // vite/client provides the `new Worker(new URL(...), ...)` overload for
+    // Vite worker bundling; also excludes @types/node from this app.
+    "types": ["vite/client"],
+    // rootDir "." because vite.config.ts / vitest.config.ts live at the app
+    // root and composite requires all inputs under rootDir.
+    "rootDir": ".",
+    // tsc emit NEVER touches dist/ (gitignored, Vite's output dir). Declarations
+    // land in dist-types/ which is gitignored too.
+    "outDir": "dist-types"
+  },
+  "include": ["src", "vite.config.ts", "vitest.config.ts"],
+  "references": [{ "path": "../../packages/core" }]
+}

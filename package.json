@@ -5,7 +5,8 @@
   "description": "CiteSync — deterministic DOCX citation analysis pipeline (reader, source map, AcademicDocument model)",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
     "build": "tsc -b",
