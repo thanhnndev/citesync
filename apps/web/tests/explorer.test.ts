@@ -31,6 +31,7 @@ import {
   groupIssuesBySeverity,
   highlightParts,
   possibleReferencesForIssue,
+  resolutionCandidatesForIssue,
   sourceSpanForIssue,
 } from '../src/explorer/explorer';
 
@@ -251,5 +252,121 @@ describe('possibleReferencesForIssue', () => {
     // bibliography carries no entries — the helper must return [].
     expect(doc.bibliography?.entries).toBeUndefined();
     expect(possibleReferencesForIssue(doc, issue)).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolutionCandidatesForIssue (R013, S03-T1)
+// ---------------------------------------------------------------------------
+
+describe('resolutionCandidatesForIssue', () => {
+  it('AMBIGUOUS span issue → the row citationId + candidate entries [r0, r1]', () => {
+    const { issues, doc } = lintFixture('match', 'ambiguous-same-author-year.docx');
+    const issue = issues.find((i) => i.id === 'CS004:0')!;
+    const joined = resolutionCandidatesForIssue(doc, issue);
+    expect(joined).not.toBeNull();
+    expect(joined!.citationId).toBe('c0');
+    expect(joined!.candidates.map((r) => r.id)).toEqual(['r0', 'r1']);
+    // Candidate order = the AMBIGUOUS row's candidateEntryIds order (r0
+    // first — First book, doc-p3; r1 — Second book, doc-p4), never a guess.
+    expect(joined!.candidates[0]!.raw).toContain('First book');
+    expect(joined!.candidates[1]!.raw).toContain('Second book');
+    expect(joined!.candidates[0]!.source.blockId).toBe('doc-p3');
+    expect(joined!.candidates[1]!.source.blockId).toBe('doc-p4');
+  });
+
+  it('each AMBIGUOUS issue joins its OWN citation row (CS004:1 → c1, CS004:2 → c2)', () => {
+    const { issues, doc } = lintFixture('match', 'ambiguous-same-author-year.docx');
+    for (const [issueId, citationId] of [
+      ['CS004:0', 'c0'],
+      ['CS004:1', 'c1'],
+      ['CS004:2', 'c2'],
+    ] as const) {
+      const issue = issues.find((i) => i.id === issueId)!;
+      const joined = resolutionCandidatesForIssue(doc, issue);
+      expect(joined).not.toBeNull();
+      expect(joined!.citationId).toBe(citationId);
+      expect(joined!.candidates.map((r) => r.id)).toEqual(['r0', 'r1']);
+    }
+  });
+
+  it('non-AMBIGUOUS issue (CS001 MISSING_REFERENCE row) → null — no candidates', () => {
+    const { issues, doc } = lintFixture('bibliography', 'ambiguous.docx');
+    const issue = issues.find((i) => i.id === 'CS001:0')!;
+    // The matchMap row region-matches but is MISSING_REFERENCE — a manual
+    // resolution offer would be a guess (§79): null.
+    expect(resolutionCandidatesForIssue(doc, issue)).toBeNull();
+  });
+
+  it('unknown blockId → null (never a fabricated offer)', () => {
+    const { doc } = lintFixture('match', 'ambiguous-same-author-year.docx');
+    const issue = syntheticIssue({
+      id: 'CS004:9',
+      severity: 'AMBIGUOUS',
+      sourceLoc: { blockId: 'no-such-block', startOffset: 0, endOffset: 12 },
+    });
+    expect(resolutionCandidatesForIssue(doc, issue)).toBeNull();
+  });
+
+  it('absent matchMap → null (no join surface — never guess)', () => {
+    const { issues, doc } = lintFixture('match', 'ambiguous-same-author-year.docx');
+    const issue = issues.find((i) => i.id === 'CS004:0')!;
+    const stripped: AcademicDocument = { ...doc, matchMap: undefined };
+    expect(resolutionCandidatesForIssue(stripped, issue)).toBeNull();
+  });
+
+  it('entry-scoped issue (blockId only — CS005) → null, no region to join', () => {
+    const { doc } = lintFixture('match', 'ambiguous-same-author-year.docx');
+    const issue = syntheticIssue({
+      id: 'CS005:0',
+      ruleId: 'CS005',
+      severity: 'WARNING',
+      sourceLoc: { blockId: 'doc-p3' },
+    });
+    expect(resolutionCandidatesForIssue(doc, issue)).toBeNull();
+  });
+
+  it('AMBIGUOUS row with candidateEntryIds stripped → null (no pickable entries)', () => {
+    const { issues, doc } = lintFixture('match', 'ambiguous-same-author-year.docx');
+    const issue = issues.find((i) => i.id === 'CS004:0')!;
+    const stripped: AcademicDocument = {
+      ...doc,
+      matchMap: {
+        ...doc.matchMap!,
+        citations: doc.matchMap!.citations.map((row) =>
+          row.citationId === 'c0' ? { ...row, candidateEntryIds: [] } : row,
+        ),
+      },
+    };
+    expect(resolutionCandidatesForIssue(stripped, issue)).toBeNull();
+  });
+
+  it('candidate ids that resolve to nothing (below-threshold bibliography) → null', () => {
+    const { issues, doc } = lintFixture('bibliography', 'ambiguous.docx');
+    // CS001's row is MISSING_REFERENCE, but synthesise an AMBIGUOUS variant
+    // at the same region: candidates exist on the row yet the bibliography
+    // has NO entries — resolveIds drops everything → null, never an empty
+    // offer.
+    const syntheticAmbiguous: AcademicDocument = {
+      ...doc,
+      matchMap: {
+        version: 1,
+        citations: [
+          {
+            citationId: 'c0',
+            citationSource: { blockId: 'doc-p2', startOffset: 12, endOffset: 23 },
+            relationship: 'AMBIGUOUS',
+            score: 0.8,
+            tier: 2,
+            confidence: 0.8,
+            reasons: [],
+            candidateEntryIds: ['rx', 'ry'],
+          },
+        ],
+        entryStatus: [],
+      },
+    };
+    const issue = issues.find((i) => i.id === 'CS001:0')!;
+    expect(resolutionCandidatesForIssue(syntheticAmbiguous, issue)).toBeNull();
   });
 });

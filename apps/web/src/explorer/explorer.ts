@@ -237,3 +237,79 @@ function resolveIds(entries: readonly ReferenceEntry[], ids: readonly string[]):
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// resolutionCandidatesForIssue — the R013 manual-resolution seam (S03-T1).
+// ---------------------------------------------------------------------------
+
+/**
+ * The picker surface for one resolvable issue (R013 manual resolution).
+ */
+export interface ResolutionCandidates {
+  /** The region-joined matchMap citation row's id (e.g. `'c0'`). */
+  citationId: string;
+  /** The AMBIGUOUS row's candidate entries, resolved against the bibliography. */
+  candidates: ReferenceEntry[];
+}
+
+/**
+ * R013 (S03-T1): the candidate entries a user may choose between for one
+ * AMBIGUOUS issue — the resolution-picker's data source.
+ *
+ * Mirrors {@link possibleReferencesForIssue}'s SPAN-SCOPED region join
+ * (sameRegion = blockId + startOffset + endOffset, FIRST matching row wins in
+ * document order) over `doc.matchMap.citations`, but additionally returns the
+ * joined row's `citationId` — the stable key SessionResolution records the
+ * user's choice against (T2/T3). All data is matcher data (R012 — NEVER LLM).
+ *
+ * Conservative bias (§79 — never guess): returns `null` when
+ *   - `matchMap` is absent, or the bibliography has no entries;
+ *   - the issue is entry-scoped (blockId only — no region to join; CS002/
+ *     CS005/CS006/CS009 surface entries/blocks, not text spans, MEM074);
+ *   - no matchMap row region-matches the issue's source span;
+ *   - the row's `relationship !== 'AMBIGUOUS'` (CS001 MISSING_REFERENCE →
+ *     null — no candidates exist);
+ *   - the row's `candidateEntryIds` is absent or empty, or none of its ids
+ *     resolve to a bibliography entry (below-threshold bibliography → null,
+ *     never an empty offer).
+ *
+ * Candidate ids are resolved via {@link resolveIds}: unknown ids dropped,
+ * order preserved, deduped preserve-first-seen.
+ */
+export function resolutionCandidatesForIssue(
+  doc: AcademicDocument,
+  issue: LintIssue,
+): ResolutionCandidates | null {
+  // Never guess (§79): no join surface, or nothing to resolve against.
+  if (doc.matchMap === undefined) return null;
+  const entries = doc.bibliography?.entries ?? [];
+  if (entries.length === 0) return null;
+
+  const loc = issue.sourceLoc;
+  // Entry-scoped issue (blockId only): there is no source span to region-join.
+  if (loc.startOffset === undefined || loc.endOffset === undefined) return null;
+
+  for (const row of doc.matchMap.citations) {
+    if (!sameRegion(row.citationSource, loc)) continue;
+    // First matching row wins (deterministic — a region maps to one
+    // citation row by construction, R008).
+    if (row.relationship !== 'AMBIGUOUS') return null;
+    const candidateIds = row.candidateEntryIds;
+    if (candidateIds === undefined || candidateIds.length === 0) return null;
+    // Dedupe preserve-first-seen, then resolve (drop unknown ids).
+    const seen = new Set<string>();
+    const uniqueIds: string[] = [];
+    for (const id of candidateIds) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      uniqueIds.push(id);
+    }
+    const candidates = resolveIds(entries, uniqueIds);
+    // All candidate ids resolved to nothing (below-threshold bibliography):
+    // no pickable entries — never an empty offer.
+    if (candidates.length === 0) return null;
+    return { citationId: row.citationId, candidates };
+  }
+
+  return null;
+}
