@@ -5,12 +5,15 @@
  *
  * Covers:
  *   - makeAnalyzeRequest shape + transferable ArrayBuffer,
+ *   - makeAnalyzeRequest bibliographyBlockIds round-trip (present / absent),
  *   - classifyWorkerError: all four known names preserved + fallback,
  *   - describeWorkerError: all five branches (4 known + fallback),
  *   - type guards discriminating the incoming union,
  *   - runAnalysis against a stub Worker: correlated request + transferred
  *     bytes, stage forwarding order, done resolve shape, error reject
- *     envelope, foreign-correlation-id filtering, cleanup (terminate).
+ *     envelope, foreign-correlation-id filtering, cleanup (terminate),
+ *   - runAnalysis forwards bibliographyBlockIds into the posted request only
+ *     when provided (below-threshold recovery seam, T3).
  */
 
 import { describe, expect, it, vi } from 'vitest';
@@ -100,6 +103,30 @@ describe('makeAnalyzeRequest', () => {
     const request = makeAnalyzeRequest('req-1', bytes, 'paper.docx');
     expect(request).toEqual({ id: 'req-1', type: 'analyze', bytes, fileName: 'paper.docx' });
     expect(request.bytes).toBeInstanceOf(ArrayBuffer);
+  });
+
+  it('round-trips bibliographyBlockIds when provided (below-threshold recovery)', () => {
+    const bytes = new ArrayBuffer(8);
+    const request = makeAnalyzeRequest('req-2', bytes, 'paper.docx', ['doc-p3', 'doc-p4']);
+    expect(request).toEqual({
+      id: 'req-2',
+      type: 'analyze',
+      bytes,
+      fileName: 'paper.docx',
+      bibliographyBlockIds: ['doc-p3', 'doc-p4'],
+    });
+    // The array identity is preserved (no defensive copy) — the worker
+    // consumes it read-only, and postMessage structured-clones it anyway.
+    expect(request.bibliographyBlockIds).toEqual(['doc-p3', 'doc-p4']);
+  });
+
+  it('omits bibliographyBlockIds entirely when not provided (normal run)', () => {
+    const bytes = new ArrayBuffer(8);
+    const request = makeAnalyzeRequest('req-3', bytes, 'paper.docx');
+    // Absent field, NOT undefined — the worker's destructure sees no
+    // override and runs the normal detector path (T2 contract).
+    expect('bibliographyBlockIds' in request).toBe(false);
+    expect(request).toEqual({ id: 'req-3', type: 'analyze', bytes, fileName: 'paper.docx' });
   });
 });
 
@@ -263,5 +290,52 @@ describe('runAnalysis', () => {
 
     await promise;
     expect(onStage).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards bibliographyBlockIds into the posted request when provided (recovery)', async () => {
+    const worker = new FakeWorker();
+    const onStage = vi.fn();
+    const promise = runAnalysis(
+      asWorker(worker),
+      new ArrayBuffer(8),
+      'a.docx',
+      { onStage, bibliographyBlockIds: ['doc-p0', 'doc-p3'] },
+      { makeId: () => 'req-bb' },
+    );
+
+    const posted = worker.posted[0]!;
+    expect(posted.message).toMatchObject({
+      id: 'req-bb',
+      type: 'analyze',
+      fileName: 'a.docx',
+      bibliographyBlockIds: ['doc-p0', 'doc-p3'],
+    });
+    // Regression: stage forwarding + done resolve shape are unchanged by the
+    // new optional field — the recovery request rides the same pipeline.
+    for (const stage of ALL_STAGES) {
+      worker.emit({ id: 'req-bb', type: 'stage', stage });
+    }
+    worker.emit({ id: 'req-bb', type: 'done', report: cannedReport, doc: cannedDoc, stages: [...ALL_STAGES] });
+
+    await expect(promise).resolves.toEqual({
+      report: cannedReport,
+      doc: cannedDoc,
+      stages: [...ALL_STAGES],
+    });
+    expect(onStage.mock.calls.map((call) => call[0] as PipelineStage)).toEqual([...ALL_STAGES]);
+    expect(worker.terminated).toBe(true);
+  });
+
+  it('omits bibliographyBlockIds from the posted request when not provided', async () => {
+    const worker = new FakeWorker();
+    const promise = runAnalysis(asWorker(worker), new ArrayBuffer(8), 'a.docx', {}, { makeId: () => 'req-nb' });
+
+    const posted = worker.posted[0]!.message as { bibliographyBlockIds?: unknown };
+    expect(posted.bibliographyBlockIds).toBeUndefined();
+    expect('bibliographyBlockIds' in posted).toBe(false);
+
+    // Settle the promise so the test never dangles.
+    worker.emit({ id: 'req-nb', type: 'done', report: cannedReport, doc: cannedDoc, stages: [] });
+    await promise;
   });
 });

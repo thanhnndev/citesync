@@ -45,6 +45,13 @@ export interface AnalyzeRequest {
   bytes: ArrayBuffer;
   /** Original file name (display-friendly; basename by the file picker). */
   fileName: string;
+  /**
+   * Below-threshold recovery (T3/T5): section block ids to rebuild the
+   * bibliography from, instead of running the detector. ABSENT for a normal
+   * full-document run — optional field, never sent as undefined (see
+   * makeAnalyzeRequest).
+   */
+  bibliographyBlockIds?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -86,9 +93,23 @@ export type WorkerIncomingMessage = WorkerStageMessage | WorkerDoneMessage | Wor
 // Pure helpers (node-testable — no Worker needed).
 // ---------------------------------------------------------------------------
 
-/** Build a correlated analyze request (bytes stays a transferable ArrayBuffer). */
-export function makeAnalyzeRequest(id: string, bytes: ArrayBuffer, fileName: string): AnalyzeRequest {
-  return { id, type: 'analyze', bytes, fileName };
+/**
+ * Build a correlated analyze request (bytes stays a transferable ArrayBuffer).
+ *
+ * `bibliographyBlockIds` is OPTIONAL (below-threshold recovery, T3): the field
+ * is set on the envelope ONLY when non-undefined, so existing call sites and
+ * tests (and the worker's absence check) keep working unchanged — an absent
+ * field means "normal full-document run, run the detector".
+ */
+export function makeAnalyzeRequest(
+  id: string,
+  bytes: ArrayBuffer,
+  fileName: string,
+  bibliographyBlockIds?: string[],
+): AnalyzeRequest {
+  const request: AnalyzeRequest = { id, type: 'analyze', bytes, fileName };
+  if (bibliographyBlockIds !== undefined) request.bibliographyBlockIds = bibliographyBlockIds;
+  return request;
 }
 
 /** Type guard: stage progress tick. */

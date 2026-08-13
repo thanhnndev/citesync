@@ -38,6 +38,12 @@ export interface AnalyzeResult {
 export interface RunAnalysisOptions {
   /** Forwarded each time the worker reports a pipeline stage (PRD §61). */
   onStage?: (stage: PipelineStage) => void;
+  /**
+   * Below-threshold recovery (T3/T5): section block ids to rebuild the
+   * bibliography from, instead of running the detector. Forwarded into the
+   * AnalyzeRequest; absent → normal full-document run.
+   */
+  bibliographyBlockIds?: string[];
 }
 
 /** Injectable dependencies — the only test seam (node vitest has no real Worker). */
@@ -67,7 +73,7 @@ export function runAnalysis(
   options: RunAnalysisOptions = {},
   deps: RunAnalysisDeps = {},
 ): Promise<AnalyzeResult> {
-  const { onStage } = options;
+  const { onStage, bibliographyBlockIds } = options;
   const makeId = deps.makeId ?? ((): string => crypto.randomUUID());
   const id = makeId();
 
@@ -96,7 +102,8 @@ export function runAnalysis(
     };
 
     worker.addEventListener('message', onMessage);
-    // Transfer the buffer: detached on send, must not be read again.
-    worker.postMessage(makeAnalyzeRequest(id, bytes, fileName), [bytes]);
+    // Transfer the buffer: detached on send, must not be read again. The
+    // section override rides along when present (undefined → field absent).
+    worker.postMessage(makeAnalyzeRequest(id, bytes, fileName, bibliographyBlockIds), [bytes]);
   });
 }

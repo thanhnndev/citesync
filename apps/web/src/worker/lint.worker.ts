@@ -8,7 +8,10 @@
  * that the core runs inside a browser worker (M003 risk #1).
  *
  * Message contract (protocol.ts — the S01→S02 boundary):
- *   in:  AnalyzeRequest  {id, type:'analyze', bytes, fileName}  (bytes transferred)
+ *   in:  AnalyzeRequest  {id, type:'analyze', bytes, fileName, bibliographyBlockIds?}  (bytes transferred)
+ *        — bibliographyBlockIds: below-threshold recovery (T3/T5) — when present the
+ *        engine rebuilds the bibliography from those section blocks instead of running
+ *        the detector (absent for a normal full-document run).
  *   out: WorkerStageMessage {id, type:'stage', stage}        — per pipeline stage (PRD §61)
  *      | WorkerDoneMessage   {id, type:'done', report, doc, stages}
  *      | WorkerErrorMessage  {id, type:'error', name, message}  (stable err.name, D021)
@@ -39,7 +42,7 @@ import type {
 } from './protocol';
 
 addEventListener('message', (event: MessageEvent<AnalyzeRequest>) => {
-  const { id, bytes, fileName } = event.data;
+  const { id, bytes, fileName, bibliographyBlockIds } = event.data;
   try {
     // Collect stages as the engine emits them (PRD §61) — the final list is
     // the checklist truth delivered in the done envelope.
@@ -49,6 +52,9 @@ addEventListener('message', (event: MessageEvent<AnalyzeRequest>) => {
         stages.push(stage);
         postMessage({ id, type: 'stage', stage } satisfies WorkerStageMessage);
       },
+      // Undefined when absent — engine falls back to the detector path
+      // (build-model checks `givenIds !== undefined`).
+      bibliographyBlockIds,
     });
 
     // Canonical CLI-compatible report from the shared pure builder (D024) —
