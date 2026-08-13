@@ -4,9 +4,12 @@
  * The success-report shape is now built by `@citesync/core`'s pure
  * `buildCliReport` (D024 — single source of truth shared with the M003
  * worker and export UI, browser-safe): `buildReport` delegates here, so
- * CLI JSON and app JSON can never drift. This module keeps the CLI-owned
- * pieces: the `SEVERITY_ORDER` re-derivation, the failure classification
- * (`ErrorCode`, `CliErrorInfo`, `buildErrorReport`) and `serializeReport`.
+ * CLI JSON and app JSON can never drift. Serialization (`serializeReport`)
+ * also lives in @citesync/core now (D024 extension) and is re-exported from
+ * here, so `--json` output is byte-identical to the app's export by
+ * construction. This module keeps the CLI-owned pieces: the
+ * `SEVERITY_ORDER` re-derivation and the failure classification
+ * (`ErrorCode`, `CliErrorInfo`, `buildErrorReport`).
  *
  * Shape (deterministic; frozen for M003 — T2 adds the contract tests):
  *
@@ -42,7 +45,15 @@ import { basename } from 'node:path';
 // re-exported so json-schema.ts `satisfies` binds, render.ts and the
 // cli-contract/cli-determinism tests keep resolving. Failure classification
 // (ErrorCode/CliErrorInfo) stays CLI-owned below.
-export { REPORT_VERSION, countIssues, emptyCounts } from '@citesync/core';
+
+/**
+ * Serialize the report to the canonical JSON text (byte contract): 2-space
+ * pretty-printed with a trailing newline, property order = insertion order,
+ * so identical input always yields byte-identical output (R008 determinism).
+ * Owned by @citesync/core (D024 extension) — re-exported here so the CLI
+ * surface and `--json` output are unchanged.
+ */
+export { REPORT_VERSION, countIssues, emptyCounts, serializeReport } from '@citesync/core';
 export type { CliReport, CliReportMeta, SeverityCounts } from '@citesync/core';
 
 /** Fixed, deterministic order of the severity-count keys (R008). */
@@ -98,11 +109,3 @@ export function buildErrorReport(file: string, error: CliErrorInfo): CliReport {
   };
 }
 
-/**
- * Serialize the report to the canonical JSON text: 2-space pretty-printed
- * with a trailing newline, property order = insertion order, so identical
- * input always yields byte-identical output (R008 determinism).
- */
-export function serializeReport(report: CliReport): string {
-  return `${JSON.stringify(report, null, 2)}\n`;
-}

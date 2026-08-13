@@ -8,6 +8,11 @@
  * the CLI's own `serializeReport`/`validateReport` without creating a
  * reverse test-edge (core → cli).
  *
+ * T1 adds an end-to-end parity guard: the genuine CLI surface
+ * (`runCli(['--json', fixture])` — arg parse → fs read → lintDocument →
+ * buildReport → serialize) must produce byte-identical stdout to the shared
+ * core serializer, proving the CLI and the app export can never drift.
+ *
  * Fixtures are git-tracked files under fixtures/.
  */
 
@@ -28,6 +33,7 @@ import type { AcademicDocument, CliReport } from '@citesync/core';
 
 import { buildReport, serializeReport } from '../src/report.js';
 import { validateReport } from '../src/json-schema.js';
+import { runCli } from '../src/index.js';
 
 const FIXTURES = fileURLToPath(new URL('../../../fixtures/', import.meta.url));
 const MINIMAL = join(FIXTURES, 'minimal.docx'); // 1 ERROR (CS001)
@@ -79,6 +85,22 @@ describe('byte-compat: CLI buildReport delegation === core buildCliReport (D024)
         }),
       );
       expect(viaCore).toBe(viaCli);
+    });
+  }
+});
+
+describe('end-to-end parity: CLI --json === shared core serializer (R014, T1)', () => {
+  for (const [name, fixture] of FIXTURE_CASES) {
+    it(`${name}: runCli stdout byte-equals core serializeReport and is schema-valid`, () => {
+      // The real CLI pipeline (arg parse → fs read → lintDocument →
+      // buildReport → serialize) must emit the SAME bytes the shared core
+      // serializer produces — the strongest possible parity proof (R014).
+      const outcome = runCli(['--json', fixture]);
+      expect(outcome.stdout).toBe(serializeReport(coreReport(fixture)));
+      // And what the CLI prints must itself validate against the frozen
+      // schema (D020) — the byte-compat guard never bypasses the contract.
+      const validation = validateReport(outcome.stdout);
+      expect(validation.valid).toBe(true);
     });
   }
 });

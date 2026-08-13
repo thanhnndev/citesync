@@ -51,7 +51,7 @@ export type {
 // and browser-safe (zero Node builtins), so the CLI delegates here (buildReport →
 // buildCliReport) and the M003 worker/export UI consume the SAME builder from
 // core. CLI JSON and app JSON can never drift.
-export { buildCliReport, countIssues, emptyCounts, REPORT_VERSION } from './cli-report.js';
+export { buildCliReport, countIssues, emptyCounts, REPORT_VERSION, serializeReport } from './cli-report.js';
 export type {
   BuildCliReportOptions,
   CliReport,

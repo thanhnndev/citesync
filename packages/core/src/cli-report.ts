@@ -9,7 +9,9 @@
  * canonical report. The CLI's
  * `buildReport` delegates here, so CLI JSON and app JSON can never drift
  * (D024 — single source of truth; cli-determinism + cli-contract guard the
- * byte-compat).
+ * byte-compat). Serialization is shared too: `serializeReport` lives here
+ * (D024 extension) so CLI `--json` and the app export serialize via the
+ * SAME function — byte-compat by construction (R014).
  *
  * Shape (deterministic; frozen — D020/D024/D025):
  *
@@ -137,4 +139,18 @@ export function buildCliReport(
     issues: issues as LintIssue[],
     counts: countIssues(issues),
   };
+}
+
+/**
+ * Serialize the report to the canonical JSON text (R014 byte contract):
+ * 2-space pretty-printed with a trailing newline, property order = insertion
+ * order (R008), so identical input ALWAYS yields byte-identical output.
+ *
+ * This is THE serializer shared by the CLI (`--json`), the M003 worker and
+ * the export UI — byte-compat is true by construction because every consumer
+ * calls this exact function. Pure and browser-safe: zero imports, no Node
+ * builtins (D024 extension).
+ */
+export function serializeReport(report: CliReport): string {
+  return `${JSON.stringify(report, null, 2)}\n`;
 }
