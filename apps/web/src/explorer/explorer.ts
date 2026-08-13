@@ -144,6 +144,25 @@ export function highlightParts(
 }
 
 // ---------------------------------------------------------------------------
+// referenceLabel — the single deterministic entry label (R013-T3 shared).
+// ---------------------------------------------------------------------------
+
+/**
+ * Deterministic reference label: "Authors (year) — title" falling back to the
+ * raw entry text when the entry has no parsed title (§21, D012).
+ *
+ * R013-T3: ONE shared helper for the evidence panel's possible-references
+ * list, the resolution picker's candidate rows and the resolved-row chip —
+ * all three always agree on the same label (pure, R008; matcher data only).
+ */
+export function referenceLabel(entry: ReferenceEntry): string {
+  const authors = (entry.authors ?? []).map((author) => author.originalName).join(', ');
+  const year = entry.year === undefined ? '' : ` (${entry.year})`;
+  const title = entry.title ?? entry.raw;
+  return `${authors}${year} \u2014 ${title}`;
+}
+
+// ---------------------------------------------------------------------------
 // possibleReferencesForIssue — deterministic, NEVER-LLM reference resolution.
 // ---------------------------------------------------------------------------
 

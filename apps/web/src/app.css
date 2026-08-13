@@ -363,6 +363,30 @@ body {
   line-height: 1.4;
 }
 
+/* R013 resolved-row chip (UI-derived view, D034 — report.counts untouched) */
+.issue-row.issue-row-resolved {
+  border-color: var(--color-done);
+}
+
+.issue-row-resolved-chip {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-done);
+}
+
+/* R013 per-group resolved count in the header ("{n} resolved") — the header
+   uppercases its text (text-transform: uppercase); the resolved span resets
+   it so the e2e-pinned wording '{n} resolved' stays verbatim in rendered
+   text (innerText), not just textContent. */
+.severity-group-resolved {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-done);
+  text-transform: none;
+}
+
 /* ------------------------------------------------------------------ */
 /* Document view (click-to-source, R009)                               */
 /* ------------------------------------------------------------------ */
@@ -583,6 +607,83 @@ mark.source-highlight.source-highlight-info {
 
 .recovery-use:hover {
   background: var(--color-accent);
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Resolution picker (R013 manual ambiguity resolution — severity-tint) */
+/* ------------------------------------------------------------------ */
+
+.resolution-picker {
+  background: #ffffff;
+  border: 1px solid var(--color-ambiguous);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.resolution-picker h2 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  color: var(--color-ambiguous);
+}
+
+.resolution-picker-hint {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.resolution-candidates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resolution-candidate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #f6f8fa;
+}
+
+.resolution-candidate.resolution-candidate-chosen {
+  border-color: var(--color-ambiguous);
+  background: #fff1e5;
+}
+
+.resolution-candidate-label {
+  min-width: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.resolution-choose {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--color-ambiguous);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--color-ambiguous);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.resolution-choose:hover {
+  background: var(--color-ambiguous);
+  color: #ffffff;
+}
+
+.resolution-choose.resolution-choose-chosen {
+  background: var(--color-ambiguous);
   color: #ffffff;
 }
 

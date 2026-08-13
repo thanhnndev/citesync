@@ -14,7 +14,7 @@
  */
 
 import type { AcademicDocument, LintIssue } from '@citesync/core';
-import { possibleReferencesForIssue } from '../explorer/explorer';
+import { possibleReferencesForIssue, referenceLabel } from '../explorer/explorer';
 import type { ReferenceEntry } from '../explorer/explorer';
 
 const MAX_BLOCK_LABEL = 72;
@@ -32,16 +32,10 @@ function blockLabel(doc: AcademicDocument, blockId: string): string {
 }
 
 /**
- * Deterministic reference label: "Authors (year) — title" falling back to the
- * raw entry text when the entry has no parsed title (§21, D012).
+ * R013-T3: `referenceLabel` moved to explorer.ts as the single shared
+ * deterministic entry label (picker + chip + possible-refs all agree). The
+ * panel keeps its own truncation wrapper only.
  */
-function referenceLabel(entry: ReferenceEntry): string {
-  const authors = (entry.authors ?? []).map((author) => author.originalName).join(', ');
-  const year = entry.year === undefined ? '' : ` (${entry.year})`;
-  const title = entry.title ?? entry.raw;
-  return `${authors}${year} \u2014 ${title}`;
-}
-
 export interface EvidencePanelProps {
   /** The selected issue whose evidence + references are shown. */
   issue: LintIssue;
