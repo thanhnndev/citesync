@@ -21,6 +21,7 @@
  *   - processing-badge                (always mounted; text switches with state)
  *   - stage-{stage}                   (StageChecklist, 5 items)
  *   - report-summary                  (done)
+ *   - export-panel, export-json       (ExportPanel — done only, T2; export-html in T4)
  *   - explorer, severity-group-{severity}, issue-row-{id} (IssueExplorer)
  *   - doc-view, source-highlight      (DocumentView)
  *   - evidence-panel, evidence-code-{code}, possible-ref-{entryId} (EvidencePanel)
@@ -33,6 +34,7 @@ import BibliographyRecoveryPanel from './components/BibliographyRecoveryPanel';
 import DocumentView from './components/DocumentView';
 import DropZone from './components/DropZone';
 import EvidencePanel from './components/EvidencePanel';
+import ExportPanel from './components/ExportPanel';
 import IssueExplorer from './components/IssueExplorer';
 import ReportSummary from './components/ReportSummary';
 import ResolutionPicker from './components/ResolutionPicker';
@@ -109,6 +111,7 @@ export default function App() {
       {done && state.report !== undefined && state.doc !== undefined && (
         <>
           <ReportSummary report={state.report} />
+          <ExportPanel report={state.report} />
           <div className="explorer-layout">
             <IssueExplorer
               issues={state.report.issues}
