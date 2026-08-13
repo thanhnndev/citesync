@@ -1,0 +1,28 @@
+{
+  "name": "@citesync/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "First-class CLI (R010): npx citesync thesis.docx renders default/detailed/json from one canonical JSON report with exit codes 0/1/2/3; consumes @citesync/core (never the parser directly); bare Node with zero DOM/server/UI dependencies",
+  "type": "module",
+  "bin": {
+    "citesync": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@citesync/core": "0.1.0"
+  },
+  "license": "UNLICENSED"
+}

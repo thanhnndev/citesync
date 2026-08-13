@@ -58,6 +58,7 @@ import { parseBody } from './parser/document.js';
 import { noteToBlock, scanNotePart } from './parser/footnotes.js';
 import { loadStyleMap } from './parser/style.js';
 import { detectBibliography } from './bibliography/detect.js';
+import { buildNumericIndexMap } from './citations/index.js';
 import { extractCitations, parseReferences } from './extract.js';
 import { buildMatchMap } from './match/index.js';
 
@@ -161,6 +162,17 @@ export function buildModel(parts: ZipParts): AcademicDocument {
   // (T04, Zotero/Word) overlaid. Pure + deterministic (R008); the citation pass
   // is independent of the bibliography outcome.
   doc.citations = extractCitations(doc);
+  // M002-S01 (T3, D016): AFTER BOTH `doc.citations` and
+  // `doc.bibliography.entries` are populated, bind every numeric citation's
+  // bracket index values to the ordered bibliography entries by positional
+  // index (pure mapping pass — never author/year scoring). Runs only when the
+  // document carries the numeric family; an absent/empty bibliography means
+  // every index surfaces 'out-of-range' (conservative — §79, never a silent
+  // guess). Pure + deterministic (R008), so buildModel stays re-runnable
+  // byte-identically.
+  if (doc.citations.some((c) => c.family === 'numeric')) {
+    doc.numericIndexMap = buildNumericIndexMap(doc);
+  }
   if (parseIssues.length > 0) doc.parseIssues = parseIssues;
   if (security !== undefined) doc.security = security;
   // S04 (T2): fill the §27 match-state map LAST — after `citations` and

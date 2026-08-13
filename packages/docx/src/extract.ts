@@ -7,14 +7,19 @@
  *
  *   extractCitations(doc) -> CitationOccurrence[]
  *     Runs T03 plain-text detection (candidate + grammar + confidence) over
- *     EVERY block — body, footnotes and endnotes — in document order, then
- *     overlays T04's structured-field identity (Zotero CSL_CITATION / Word
- *     CITATION, §22 tier 1/2): a structured occurrence REPLACES the
- *     plain-text occurrence whose display region it overlaps (the identity
- *     backbone wins, §22 — the visible display still round-trips as the
- *     occurrence `raw`, R009). Ids are re-numbered `c0..cN` in document
- *     order over the merged stream (R008) — the merge makes the per-module
- *     counters provisional, so the final numbering happens here.
+ *     EVERY block — body, footnotes and endnotes — in document order, plus
+ *     M002-S01's bracketed numeric detector (T1, §20 numeric family: `[1]`,
+ *     `[1,2]`, `[1-4]`, adjacent `[1][2]` — never half-emitted, invalid
+ *     brackets surface for CS007). Then overlays T04's structured-field
+ *     identity (Zotero CSL_CITATION / Word CITATION, §22 tier 1/2): a
+ *     structured occurrence REPLACES the plain-text occurrence whose display
+ *     region it overlaps (the identity backbone wins, §22 — the visible
+ *     display still round-trips as the occurrence `raw`, R009). All three
+ *     streams merge in offset order; a numeric bracket never double-claims a
+ *     region already owned by a structured or author-date occurrence (offset
+ *     regions distinct, §20). Ids are re-numbered `c0..cN` in document order
+ *     over the merged stream (R008) — the merge makes the per-module counters
+ *     provisional, so the final numbering happens here.
  *
  *   parseReferences(doc) -> { entries, issues }
  *     Uses S02's detected `doc.bibliography.blockIds` span (outcome
@@ -35,7 +40,7 @@ import type {
   SourceLocation,
 } from '@citesync/document-model';
 
-import { detectCitationsInBlock, detectStructuredCitationsInBlock } from './citations/index.js';
+import { detectCitationsInBlock, detectNumericCitationsInBlock, detectStructuredCitationsInBlock } from './citations/index.js';
 import type { StructuredFieldCitation } from './citations/index.js';
 import {
   describeReferenceParseFailure,
@@ -51,8 +56,9 @@ export interface ExtractedReferences {
 
 /**
  * Extract every §20 citation occurrence of a document: body + footnote +
- * endnote blocks, plain-text detection (T03) with structured-field identity
- * (T04) overlaid, merged in document order with contiguous ids `c0..cN`.
+ * endnote blocks, plain-text author-date detection (T03) + bracketed numeric
+ * detection (M002-S01-T1) with structured-field identity (T04) overlaid,
+ * merged in document order with contiguous ids `c0..cN`.
  */
 export function extractCitations(doc: AcademicDocument): CitationOccurrence[] {
   const out: CitationOccurrence[] = [];
@@ -60,7 +66,11 @@ export function extractCitations(doc: AcademicDocument): CitationOccurrence[] {
   for (const block of doc.blocks) {
     const structured = detectStructuredCitationsInBlock(block, counter);
     const plain = detectCitationsInBlock(block, counter + structured.length);
-    for (const occ of mergeBlockOccurrences(structured, plain)) {
+    const numeric = detectNumericCitationsInBlock(
+      block,
+      counter + structured.length + plain.length,
+    );
+    for (const occ of mergeBlockOccurrences(structured, plain, numeric.occurrences)) {
       // Re-number the merged stream: contiguous ids in document order (R008).
       out.push({ ...occ, id: `c${counter++}` });
     }
@@ -107,15 +117,23 @@ export function parseReferences(doc: AcademicDocument): ExtractedReferences {
 }
 
 /**
- * Merge one block's structured and plain-text occurrences: a structured
- * occurrence subsumes any plain occurrence overlapping its display region
- * (the field's identity wins, §22 tier 1/2 — the display still round-trips
- * via `raw`); remaining plain occurrences are kept. The result is in offset
- * order within the block (deterministic, R008).
+ * Merge one block's structured, author-date plain-text and numeric
+ * occurrences into one offset-ordered stream (deterministic, R008):
+ *   - a structured occurrence subsumes any lower-tier occurrence overlapping
+ *     its display region (the field's identity wins, §22 tier 1/2 — the
+ *     display still round-trips via `raw`);
+ *   - an author-date plain occurrence is kept unless it overlaps an accepted
+ *     structured occurrence;
+ *   - a numeric occurrence is kept unless it overlaps an already-accepted
+ *     occurrence — a numeric bracket never double-claims text owned by a
+ *     structured or author-date occurrence (offset regions distinct, §20).
+ * Priority is strictly structured > author-date > numeric, so the outcome is
+ * deterministic for any (pathological) overlapping input.
  */
 function mergeBlockOccurrences(
   structured: StructuredFieldCitation[],
   plain: CitationOccurrence[],
+  numeric: CitationOccurrence[],
 ): CitationOccurrence[] {
   const out: CitationOccurrence[] = structured.map((s) => ({
     id: s.id,
@@ -128,6 +146,10 @@ function mergeBlockOccurrences(
   for (const p of plain) {
     if (out.some((o) => regionsOverlap(o.source, p.source))) continue;
     out.push(p);
+  }
+  for (const n of numeric) {
+    if (out.some((o) => regionsOverlap(o.source, n.source))) continue;
+    out.push(n);
   }
   return out.sort((a, b) => (a.source.startOffset ?? 0) - (b.source.startOffset ?? 0));
 }

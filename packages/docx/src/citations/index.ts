@@ -48,6 +48,33 @@ export type {
   StructuredFieldCitation,
 } from './fields.js';
 
+// M002-S01 (T1/T2/T3) — bracketed numeric citations: candidate detector + grammar
+// + deterministic confidence + block-level entry point, plus the D016
+// index-order mapping pass that binds each bracket's index values to the
+// ordered bibliography entries (consumed by extract.ts / build-model.ts).
+export {
+  detectNumericCitationsInBlock,
+  findBracketRegions,
+  findNumericCandidates,
+  parseNumericBracket,
+  MAX_RANGE_SPAN,
+  numericConfidence,
+  BASE_NUMERIC_FEATURES,
+  buildNumericIndexMap,
+} from './numeric/index.js';
+export type {
+  NumericBlockResult,
+  BracketRegion,
+  NumericCandidate,
+  InvalidNumericCandidate,
+  NumericBracketParse,
+  NumericIndexToken,
+  ParsedNumericCitation,
+  NumericFeatures,
+  NumericIndexMap,
+  NumericTokenMap,
+} from './numeric/index.js';
+
 /**
  * Detect all author-date citation occurrences in one block's text, in
  * document order (parenthetical + narrative forms; plain-text tier 4).

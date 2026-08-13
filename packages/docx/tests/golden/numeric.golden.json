@@ -1,0 +1,338 @@
+[
+  {
+    "id": "CS001:0",
+    "ruleId": "CS001",
+    "severity": "ERROR",
+    "message": "Missing reference: no bibliography entry matches 'Xyz (1999)'.",
+    "evidence": [
+      {
+        "code": "no-entry",
+        "message": "No bibliography entry exists to match this citation.",
+        "source": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 0,
+          "startOffset": 15,
+          "endOffset": 25
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "doc-p1",
+      "paragraphIndex": 0,
+      "startOffset": 15,
+      "endOffset": 25
+    }
+  },
+  {
+    "id": "CS008:0",
+    "ruleId": "CS008",
+    "severity": "ERROR",
+    "message": "Missing numeric reference: index 9 is out of range (the bibliography has 6 entries).",
+    "evidence": [
+      {
+        "code": "out-of-range",
+        "message": "Missing numeric reference: index 9 is out of range (the bibliography has 6 entries).",
+        "source": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 0,
+          "startOffset": 78,
+          "endOffset": 79
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "doc-p1",
+      "paragraphIndex": 0,
+      "startOffset": 78,
+      "endOffset": 79
+    }
+  },
+  {
+    "id": "CS008:1",
+    "ruleId": "CS008",
+    "severity": "ERROR",
+    "message": "Missing numeric reference: index 0 is not a valid 1-based reference position.",
+    "evidence": [
+      {
+        "code": "unmatched",
+        "message": "Missing numeric reference: index 0 is not a valid 1-based reference position.",
+        "source": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 0,
+          "startOffset": 83,
+          "endOffset": 84
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "doc-p1",
+      "paragraphIndex": 0,
+      "startOffset": 83,
+      "endOffset": 84
+    }
+  },
+  {
+    "id": "CS006:0",
+    "ruleId": "CS006",
+    "severity": "ERROR",
+    "message": "Unparseable reference entry 6: 'Junk without a year.' — no (YYYY) year marker.",
+    "evidence": [
+      {
+        "code": "reference-parse",
+        "message": "no (YYYY) year marker",
+        "source": {
+          "blockId": "ref-e5"
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "ref-e5"
+    }
+  },
+  {
+    "id": "CS003:0",
+    "ruleId": "CS003",
+    "severity": "WARNING",
+    "message": "Possible year mismatch: citation 'Tran (2021)' year (2021) does not match the reference entry year.",
+    "evidence": [
+      {
+        "code": "exact",
+        "message": "First author matched on the exact normalized key.",
+        "source": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 0,
+          "startOffset": 30,
+          "endOffset": 41
+        }
+      },
+      {
+        "code": "year-mismatch",
+        "message": "Citation year differs from the reference entry year.",
+        "source": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 0,
+          "startOffset": 30,
+          "endOffset": 41
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "doc-p1",
+      "paragraphIndex": 0,
+      "startOffset": 30,
+      "endOffset": 41
+    }
+  },
+  {
+    "id": "CS007:0",
+    "ruleId": "CS007",
+    "severity": "WARNING",
+    "message": "Invalid numeric citation '[1, x]': the bracket mixes numeric indices with non-numeric text (e.g. \"[1, x]\").",
+    "evidence": [
+      {
+        "code": "invalid-numeric",
+        "message": "the bracket mixes numeric indices with non-numeric text (e.g. \"[1, x]\")",
+        "source": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 0,
+          "startOffset": 64,
+          "endOffset": 70
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "doc-p1",
+      "paragraphIndex": 0,
+      "startOffset": 64,
+      "endOffset": 70
+    }
+  },
+  {
+    "id": "CS002:0",
+    "ruleId": "CS002",
+    "severity": "WARNING",
+    "message": "Unused reference: bibliography entry 'Le, M (2019). Title. Journal.' is never cited.",
+    "evidence": [
+      {
+        "code": "unused",
+        "message": "Bibliography entry is never cited by any citation.",
+        "source": {
+          "blockId": "ref-e1"
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "ref-e1"
+    }
+  },
+  {
+    "id": "CS009:0",
+    "ruleId": "CS009",
+    "severity": "WARNING",
+    "message": "Unused numeric reference: bibliography entry 'Le, M (2019). Title. Journal.' is never cited by any numeric citation.",
+    "evidence": [
+      {
+        "code": "unused",
+        "message": "Bibliography entry is never cited by any numeric citation.",
+        "source": {
+          "blockId": "ref-e1"
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "ref-e1"
+    }
+  },
+  {
+    "id": "CS002:1",
+    "ruleId": "CS002",
+    "severity": "WARNING",
+    "message": "Unused reference: bibliography entry 'Tran, V (2024). Title. Journal.' is never cited.",
+    "evidence": [
+      {
+        "code": "unused",
+        "message": "Bibliography entry is never cited by any citation.",
+        "source": {
+          "blockId": "ref-e2"
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "ref-e2"
+    }
+  },
+  {
+    "id": "CS009:1",
+    "ruleId": "CS009",
+    "severity": "WARNING",
+    "message": "Unused numeric reference: bibliography entry 'Tran, V (2024). Title. Journal.' is never cited by any numeric citation.",
+    "evidence": [
+      {
+        "code": "unused",
+        "message": "Bibliography entry is never cited by any numeric citation.",
+        "source": {
+          "blockId": "ref-e2"
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "ref-e2"
+    }
+  },
+  {
+    "id": "CS005:0",
+    "ruleId": "CS005",
+    "severity": "WARNING",
+    "message": "Same author and year as another reference entry: 'Smith, J (2020). Title. Journal.' needs a year suffix (e.g. 2020a / 2020b) to disambiguate.",
+    "evidence": [
+      {
+        "code": "missing-suffix",
+        "message": "Same-author-same-year entries lack a unique disambiguation suffix (2018a / 2018b).",
+        "source": {
+          "blockId": "ref-e3"
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "ref-e3"
+    }
+  },
+  {
+    "id": "CS005:1",
+    "ruleId": "CS005",
+    "severity": "WARNING",
+    "message": "Same author and year as another reference entry: 'Smith, J (2020). Title. Journal.' needs a year suffix (e.g. 2020a / 2020b) to disambiguate.",
+    "evidence": [
+      {
+        "code": "missing-suffix",
+        "message": "Same-author-same-year entries lack a unique disambiguation suffix (2018a / 2018b).",
+        "source": {
+          "blockId": "ref-e4"
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "ref-e4"
+    }
+  },
+  {
+    "id": "CS002:2",
+    "ruleId": "CS002",
+    "severity": "WARNING",
+    "message": "Unused reference: bibliography entry 'Junk without a year.' is never cited.",
+    "evidence": [
+      {
+        "code": "unused",
+        "message": "Bibliography entry is never cited by any citation.",
+        "source": {
+          "blockId": "ref-e5"
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "ref-e5"
+    }
+  },
+  {
+    "id": "CS009:2",
+    "ruleId": "CS009",
+    "severity": "WARNING",
+    "message": "Unused numeric reference: bibliography entry 'Junk without a year.' is never cited by any numeric citation.",
+    "evidence": [
+      {
+        "code": "unused",
+        "message": "Bibliography entry is never cited by any numeric citation.",
+        "source": {
+          "blockId": "ref-e5"
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "ref-e5"
+    }
+  },
+  {
+    "id": "CS004:0",
+    "ruleId": "CS004",
+    "severity": "AMBIGUOUS",
+    "message": "Ambiguous author-date match: 'Smith (2020)' matches multiple reference entries; no single entry was selected (never auto-picked).",
+    "evidence": [
+      {
+        "code": "exact",
+        "message": "First author matched on the exact normalized key.",
+        "source": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 0,
+          "startOffset": 46,
+          "endOffset": 58
+        }
+      },
+      {
+        "code": "year-match",
+        "message": "Citation year equals the reference entry year.",
+        "source": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 0,
+          "startOffset": 46,
+          "endOffset": 58
+        }
+      },
+      {
+        "code": "ambiguous",
+        "message": "Multiple reference entries match this citation; none was auto-selected.",
+        "source": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 0,
+          "startOffset": 46,
+          "endOffset": 58
+        }
+      }
+    ],
+    "sourceLoc": {
+      "blockId": "doc-p1",
+      "paragraphIndex": 0,
+      "startOffset": 46,
+      "endOffset": 58
+    }
+  }
+]

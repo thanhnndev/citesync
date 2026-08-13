@@ -13,12 +13,14 @@
  *     deep-equals the ground truth table (r0.., §88 isolation preserved);
  *   - offset round-trip (R009): each occurrence's raw region slices back to
  *     its exact raw text inside the source block;
- *   - the no-false-positive guards: numeric "[1]" is ignored, a bare
- *     "Smith 2024." is never a citation, footnote citations are captured,
- *     Zotero structured identity (Nguyen H./Tran L.) survives the plain-text
- *     overlay, Vietnamese family-first surnames (Nguyễn/Trần/Phạm) parse,
- *     year-suffixes 2020a/2020b and semicolon multi-citations produce the
+ *   - the no-false-positive guards: a bare "Smith 2024." is never a citation,
+ *     footnote citations are captured, Zotero structured identity (Nguyen H./Tran L.)
+ *     survives the plain-text overlay, Vietnamese family-first surnames (Nguyễn/Trần/Phạm)
+ *     parse, year-suffixes 2020a/2020b and semicolon multi-citations produce the
  *     documented items;
+ *   - M002-S01 (T3): the bracketed numeric family — "[1]" now emits as
+ *     family 'numeric' alongside the author-date stream (no region collision),
+ *     and the numeric doc carries doc.numericIndexMap;
  *   - §88 failure isolation end-to-end on an inline document (a malformed
  *     bibliography entry never throws — parseConfidence 0 + issue recorded),
  *     and `parseReferences` returns empty for below-threshold/none sections.
@@ -167,12 +169,24 @@ describe('S03 extraction — KNOWN_CITATIONS ground truth (per fixture)', () => 
 });
 
 describe('S03 extraction — semantic guards from the slice contract', () => {
-  it('ignores numeric "[1]" and never emits a bare "Smith 2024."', () => {
+  it('keeps bracketed numeric "[1]" as family numeric alongside author-date', () => {
     const doc = parseDocument(readFileSync(join(FIXTURES_DIR, 'documents/docx/plain-text.docx')));
-    expect(doc.citations).toHaveLength(1); // only "(Johnson 2018)"
-    expect(doc.citations.some((c) => c.raw.includes('['))).toBe(false);
+    // "(Johnson 2018)" + M002-S01's bracketed numeric "[1]" (no bibliography
+    // -> every index surfaces out-of-range in doc.numericIndexMap).
+    expect(doc.citations).toHaveLength(2);
+    expect(doc.citations.map((c) => c.family)).toEqual(['author-date', 'numeric']);
+    const numeric = doc.citations.find((c) => c.family === 'numeric');
+    expect(numeric!.raw).toBe('[1]');
+    expect(numeric!.items).toEqual([{ numbers: [1] }]);
+    expect(numeric!.source).toMatchObject({ blockId: 'doc-p1', startOffset: 9, endOffset: 12 });
+    // NumericIndexMap wiring (T3): the map is present exactly for numeric docs.
+    expect(doc.numericIndexMap).toBeDefined();
+    expect(doc.numericIndexMap!.citations).toHaveLength(1);
+    expect(doc.numericIndexMap!.citations[0]!.tokens[0]).toMatchObject({
+      index: 1, status: 'out-of-range',
+    });
+    // A bare "Smith 2024." is still never a citation (conservative guard).
     expect(doc.citations.some((c) => c.raw.includes('Smith'))).toBe(false);
-    expect(doc.citations.some((c) => c.family === 'numeric')).toBe(false);
   });
 
   it('captures footnote citations (simple.docx footnote Smith (2020))', () => {
@@ -320,8 +334,14 @@ describe('S03 extraction — §88 failure isolation + boundary outcomes', () => 
       block('doc-p3', ''),
     ]);
     const occs = extractCitations(doc);
-    expect(occs).toHaveLength(1);
-    expect(occs[0]!.raw).toBe('(Smith, 2024, p. 12)');
-    expect(occs[0]!.items[0]!.page).toBe('12');
+    // M002-S01: the bracketed numeric "[1]" emits as family 'numeric'
+    // alongside the author-date occurrence — both kept, regions distinct.
+    expect(occs).toHaveLength(2);
+    expect(occs[0]!.raw).toBe('[1]');
+    expect(occs[0]!.family).toBe('numeric');
+    expect(occs[0]!.items).toEqual([{ numbers: [1] }]);
+    expect(occs[1]!.raw).toBe('(Smith, 2024, p. 12)');
+    expect(occs[1]!.family).toBe('author-date');
+    expect(occs[1]!.items[0]!.page).toBe('12');
   });
 });

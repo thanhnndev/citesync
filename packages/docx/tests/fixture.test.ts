@@ -87,6 +87,13 @@ const KNOWN_CITATIONS: Record<string, string[]> = {
   'match/ambiguous-same-author-year.docx': ['Smith (2020)', 'Smith, J. (2020).', 'Smith, J. (2020).'],
   'match/near-miss-author.docx': ['Smith, J. (2019)', 'Smith, P. (2019).', 'Roe, M. (2017).'],
   'match/near-miss-vietnamese.docx': ['Nguyễn, V. A. (2015)', 'Đỗ (2018)', 'Nguyen, V. A. (2015).', 'Do, Q. (2018).'],
+  // M002-S01 (T4): bracketed numeric corpus (D016) — the entry tails'
+  // "Author, X. (YYYY)" strings also round-trip as author-date citations.
+  'numeric/basic.docx': ['[1]', '[1,2]', 'Doe, J. (2017).', 'Roe, M. (2018).', 'Lee, K. (2019).'],
+  'numeric/ranges.docx': ['[1-4]', '[1,2,4-5]', 'Doe, J. (2017).', 'Roe, M. (2018).', 'Lee, K. (2019).', 'Tran, B. (2020).', 'Nguyen, H. (2021).'],
+  'numeric/multiple-brackets.docx': ['[1][2,3]', '[4]', 'Doe, J. (2017).', 'Roe, M. (2018).', 'Lee, K. (2019).', 'Tran, B. (2020).'],
+  'numeric/out-of-range.docx': ['[1]', '[5]', '[0]', 'Doe, J. (2017).', 'Roe, M. (2018).', 'Lee, K. (2019).'],
+  'numeric/malformed.docx': ['[3]', '[1, x]', 'Doe, J. (2017).', 'Roe, M. (2018).', 'Lee, K. (2019).'],
   'security/vba-sample.docx': [], // macro carriage text only — no citations
 };
 
@@ -100,10 +107,10 @@ const FIXTURES_WITH_FOOTNOTES = new Set([
 describe('fixture corpus — real .docx files parse end to end', () => {
   it('covers the full committed fixture corpus (manifest drift guard)', () => {
     // Lock the fixture inventory: README.md + minimal(1) + author-date(7) +
-    // documents(3) + bibliography(5) + match(4, S04-T1/T2) + security(6 incl.
-    // not-a-docx.zip + lying-bomb) = 27 files.
-    expect(ALL_FILES).toHaveLength(27);
-    expect(VALID_FIXTURES).toHaveLength(21);
+    // documents(3) + bibliography(5) + match(4, S04-T1/T2) + numeric(5,
+    // M002-S01 D016) + security(6 incl. not-a-docx.zip + lying-bomb) = 32 files.
+    expect(ALL_FILES).toHaveLength(32);
+    expect(VALID_FIXTURES).toHaveLength(26);
     expect(BAD_SAMPLES).toHaveLength(5);
   });
 

@@ -2,6 +2,8 @@
   "files": [],
   "references": [
     { "path": "./packages/document-model" },
-    { "path": "./packages/docx" }
+    { "path": "./packages/docx" },
+    { "path": "./packages/core" },
+    { "path": "./packages/cli" }
   ]
 }

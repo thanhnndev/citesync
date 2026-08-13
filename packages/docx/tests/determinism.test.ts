@@ -63,6 +63,11 @@ const EXPECTED_BIBLIOGRAPHY: Record<string, 'detected' | 'below-threshold' | 'ab
   'match/ambiguous-same-author-year.docx': 'detected',
   'match/near-miss-author.docx': 'detected',
   'match/near-miss-vietnamese.docx': 'detected',
+  'numeric/basic.docx': 'detected',
+  'numeric/ranges.docx': 'detected',
+  'numeric/multiple-brackets.docx': 'detected',
+  'numeric/out-of-range.docx': 'detected',
+  'numeric/malformed.docx': 'detected',
   'security/vba-sample.docx': 'below-threshold',
 };
 
@@ -88,6 +93,13 @@ const VALID_FIXTURES = [
   'match/ambiguous-same-author-year.docx',
   'match/near-miss-author.docx',
   'match/near-miss-vietnamese.docx',
+  // M002-S01 (T4): bracketed numeric corpus (D016) — all carry a detected
+  // References section so in-range indices resolve to entries[index-1].
+  'numeric/basic.docx',
+  'numeric/ranges.docx',
+  'numeric/multiple-brackets.docx',
+  'numeric/out-of-range.docx',
+  'numeric/malformed.docx',
   'security/vba-sample.docx',
 ];
 

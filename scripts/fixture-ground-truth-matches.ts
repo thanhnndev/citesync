@@ -74,7 +74,7 @@ export const KNOWN_MATCHES: Record<string, KnownMatchMap> = {
     citations: [missing('c0'), missing('c1'), missing('c2')],
     entryStatus: [],
   }),
-  'documents/docx/plain-text.docx': MM({ citations: [missing('c0')], entryStatus: [] }),
+  'documents/docx/plain-text.docx': MM({ citations: [missing('c0'), missing('c1')], entryStatus: [] }),
   'bibliography/no-bibliography.docx': MM({
     citations: [missing('c0'), missing('c1')],
     entryStatus: [],
@@ -166,4 +166,67 @@ export const KNOWN_MATCHES: Record<string, KnownMatchMap> = {
 
   // Macro-carriage sample: no citations, no entries -> empty map.
   'security/vba-sample.docx': MM({ citations: [], entryStatus: [] }),
+
+  // ── M002-S01 (T4) — numeric corpus match states (D016/§79) ───────────────
+  // Numeric brackets have no scoreable author-date item -> the §79
+  // no-silent-guess row (MISSING_REFERENCE, no target — D016's own index
+  // mapping owns the bindings); the entry tails match their entries cleanly.
+  'numeric/basic.docx': MM({
+    citations: [
+      missing('c0'),
+      missing('c1'),
+      MR({ citationId: 'c2', relationship: 'MATCHED', matchedEntryId: 'r0', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c3', relationship: 'MATCHED', matchedEntryId: 'r1', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c4', relationship: 'MATCHED', matchedEntryId: 'r2', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+    ],
+    entryStatus: [ES({ entryId: 'r0', status: 'CITED' }), ES({ entryId: 'r1', status: 'CITED' }), ES({ entryId: 'r2', status: 'CITED' })],
+  }),
+
+  'numeric/ranges.docx': MM({
+    citations: [
+      missing('c0'),
+      missing('c1'),
+      MR({ citationId: 'c2', relationship: 'MATCHED', matchedEntryId: 'r0', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c3', relationship: 'MATCHED', matchedEntryId: 'r1', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c4', relationship: 'MATCHED', matchedEntryId: 'r2', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c5', relationship: 'MATCHED', matchedEntryId: 'r3', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c6', relationship: 'MATCHED', matchedEntryId: 'r4', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+    ],
+    entryStatus: [ES({ entryId: 'r0', status: 'CITED' }), ES({ entryId: 'r1', status: 'CITED' }), ES({ entryId: 'r2', status: 'CITED' }), ES({ entryId: 'r3', status: 'CITED' }), ES({ entryId: 'r4', status: 'CITED' })],
+  }),
+
+  'numeric/multiple-brackets.docx': MM({
+    citations: [
+      missing('c0'),
+      missing('c1'),
+      missing('c2'),
+      MR({ citationId: 'c3', relationship: 'MATCHED', matchedEntryId: 'r0', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c4', relationship: 'MATCHED', matchedEntryId: 'r1', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c5', relationship: 'MATCHED', matchedEntryId: 'r2', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c6', relationship: 'MATCHED', matchedEntryId: 'r3', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+    ],
+    entryStatus: [ES({ entryId: 'r0', status: 'CITED' }), ES({ entryId: 'r1', status: 'CITED' }), ES({ entryId: 'r2', status: 'CITED' }), ES({ entryId: 'r3', status: 'CITED' })],
+  }),
+
+  'numeric/out-of-range.docx': MM({
+    citations: [
+      missing('c0'),
+      missing('c1'),
+      missing('c2'),
+      MR({ citationId: 'c3', relationship: 'MATCHED', matchedEntryId: 'r0', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c4', relationship: 'MATCHED', matchedEntryId: 'r1', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c5', relationship: 'MATCHED', matchedEntryId: 'r2', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+    ],
+    entryStatus: [ES({ entryId: 'r0', status: 'CITED' }), ES({ entryId: 'r1', status: 'CITED' }), ES({ entryId: 'r2', status: 'CITED' })],
+  }),
+
+  'numeric/malformed.docx': MM({
+    citations: [
+      missing('c0'),
+      MR({ citationId: 'c1', relationship: 'MATCHED', matchedEntryId: 'r0', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c2', relationship: 'MATCHED', matchedEntryId: 'r1', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+      MR({ citationId: 'c3', relationship: 'MATCHED', matchedEntryId: 'r2', score: 0.925, tier: 1, confidence: 0.925, reasons: ['exact', 'year-match'] }),
+    ],
+    entryStatus: [ES({ entryId: 'r0', status: 'CITED' }), ES({ entryId: 'r1', status: 'CITED' }), ES({ entryId: 'r2', status: 'CITED' })],
+  }),
 };

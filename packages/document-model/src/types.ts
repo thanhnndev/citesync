@@ -587,6 +587,65 @@ export interface MatchMap {
 }
 
 /**
+ * M002-S01 (D016) — one bracket index value's binding to a bibliography
+ * entry.
+ *
+ * A numeric bracket token is mapped by ORDERED INDEX (never by author/year
+ * scoring — that is the S04 author-date matcher's job). Range tokens are
+ * expanded: `[1-4]` yields four `NumericIndexToken` entries (index 1..4),
+ * each with its own binding status, all anchored to the same source segment.
+ */
+export interface NumericIndexToken {
+  /** The bracket index value being mapped (1-based reference position). */
+  index: number;
+  /**
+   * The bound `ReferenceEntry.id` (`entries[index-1]`), present exactly when
+   * `status === 'resolved'`.
+   */
+  resolvedEntryId?: string;
+  /**
+   * The binding status (conservative bias — D016, §79):
+   *   'resolved'    — index in [1..entries.length], bound to
+   *                   `entries[index-1]` by discovery order;
+   *   'out-of-range' — index > entries.length (or no bibliography present)
+   *                   — surfaced explicitly, never silently dropped;
+   *   'unmatched'   — index < 1 (e.g. `[0]`): not a valid 1-based position,
+   *                   so it binds to no entry — surfaced, never guessed.
+   */
+  status: 'resolved' | 'out-of-range' | 'unmatched';
+  /** Where the index value sits in the source text (R009 round-trip). */
+  source: SourceLocation;
+}
+
+/**
+ * M002-S01 (D016) — one numeric citation occurrence's bracket→entry
+ * bindings, in source order. `citationId` mirrors the §20 occurrence id
+ * (`c{n}`) so the evidence UI can join map rows back to `doc.citations`.
+ */
+export interface NumericTokenMap {
+  /** The `CitationOccurrence.id` this map row refers to. */
+  citationId: string;
+  /** One binding per index VALUE (ranges expanded), in source order. */
+  tokens: NumericIndexToken[];
+}
+
+/**
+ * M002-S01 (D016) — the numeric bracket→bibliography index map.
+ *
+ * Computed by a pure index-order mapping pass AFTER `citations` and
+ * `bibliography.entries` are populated in buildModel (D013 additive step,
+ * D016). `citations` is ordered exactly like the numeric subset of
+ * `AcademicDocument.citations` (document order — R008). Deterministic: same
+ * document bytes → same map, byte-identically (R008).
+ */
+export interface NumericIndexMap {
+  /** Schema version — bump only on a breaking shape change. Currently 1. */
+  version: 1;
+  /** One token map per numeric citation occurrence, in document order. */
+  citations: NumericTokenMap[];
+}
+
+/**
  * §15 — the AcademicDocument contract (verbatim), the fixed handoff shape for
  * S02–S04. S01 fills `metadata`, `blocks`, `sourceMap` only; `bibliography`
  * (S02) and `citations` (S03) are contract stubs left empty/undefined.
@@ -606,6 +665,16 @@ export interface AcademicDocument {
    * matters in buildModel). Absent until the matcher runs.
    */
   matchMap?: MatchMap;
+  /**
+   * M002-S01 extension (additive, D013/D016): the numeric bracket→entry
+   * index map — every numeric citation's bracket tokens bound to
+   * bibliography entries by ORDERED INDEX (never author/year scoring).
+   * Filled by a pure index-order mapping pass AFTER `citations` and
+   * `bibliography.entries` are populated in buildModel. Out-of-range and
+   * unmatched indices surface explicitly — never silently dropped. Absent
+   * when the document has no numeric citations.
+   */
+  numericIndexMap?: NumericIndexMap;
   /**
    * S03 extension (additive): isolated non-fatal reference-parsing issues
    * (§88) — one per bibliography entry whose grammar parse failed. The entry

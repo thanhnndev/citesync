@@ -106,6 +106,33 @@ export type {
   StructuredFieldCitation,
 } from './citations/index.js';
 
+// M002-S01 (T1/T2/T3): the bracketed numeric citation family — detector + grammar
+// + deterministic confidence + the D016 index-order mapping pass that binds each
+// bracket index value to the ordered bibliography entries (exposed for the
+// ruleset and the M003 evidence UI — doc.numericIndexMap is the wired surface).
+export {
+  detectNumericCitationsInBlock,
+  findBracketRegions,
+  findNumericCandidates,
+  parseNumericBracket,
+  MAX_RANGE_SPAN,
+  numericConfidence,
+  BASE_NUMERIC_FEATURES,
+  buildNumericIndexMap,
+} from './citations/index.js';
+export type {
+  NumericBlockResult,
+  BracketRegion,
+  NumericCandidate,
+  InvalidNumericCandidate,
+  NumericBracketParse,
+  NumericIndexToken,
+  ParsedNumericCitation,
+  NumericFeatures,
+  NumericIndexMap,
+  NumericTokenMap,
+} from './citations/index.js';
+
 // S03 (T05): bibliography entry splitting + §21 reference grammar + confidence
 // (§88 failure isolation — unparseable entries never throw).
 export {
@@ -138,6 +165,51 @@ export type { MatchWeights } from './match/index.js';
 export { scoreCitationAgainstEntry, AUTHOR_TIER } from './match/index.js';
 export type { CitationScore } from './match/index.js';
 export { buildMatchMap } from './match/index.js';
+
+// M002-S02 (T1): the frozen LintIssue + Rule contract that the S3 lint core
+// and the CLI consume (T2/T3 add the CS001-CS009 rule implementations; T4
+// adds the registry + lintDocumentRules aggregator). The author-date ruleset
+// (T2) and the numeric + parse-failure ruleset (T3) render through the
+// barrel so S3/CLI consume them from the public entry.
+export {
+  RULE_SEVERITIES,
+  AUTHOR_DATE_RULES,
+  ruleCS001,
+  ruleCS002,
+  ruleCS003,
+  ruleCS004,
+  ruleCS005,
+  NUMERIC_RULES,
+  ruleCS006,
+  ruleCS007,
+  ruleCS008,
+  ruleCS009,
+} from './rules/index.js';
+export type {
+  LintEvidence,
+  LintIssue,
+  Rule,
+  RuleContext,
+  RuleEvidenceCode,
+  RuleSeverity,
+} from './rules/index.js';
+
+// M002-S02 (T4): the rule registry + deterministic aggregator — the S3
+// lintDocument()-ready surface. REGISTERED_RULES is the single registration
+// point (CS001–CS009); lintDocumentRules(doc, { enabled, severityOverrides })
+// runs the pass honoring segment enable/disable (PRD §53 families) and
+// per-rule severity overrides (PRD §51) with a deterministic issue order.
+export {
+  REGISTERED_RULES,
+  RULE_BY_ID,
+  RULE_SEGMENTS,
+  lintDocumentRules,
+} from './rules/index.js';
+export type {
+  LintDocumentRulesOptions,
+  RuleSegment,
+  SeverityInput,
+} from './rules/index.js';
 
 // The shared §15 model contract (re-exported for one-import convenience).
 export type {

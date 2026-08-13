@@ -39,6 +39,7 @@ import { deflateSync, unzipSync, zipSync } from 'fflate';
 import { KNOWN_OCCURRENCES } from './fixture-ground-truth.js';
 import { KNOWN_MATCHES } from './fixture-ground-truth-matches.js';
 import { KNOWN_REFERENCES } from './fixture-ground-truth-references.js';
+import { KNOWN_NUMERIC_INDEX_MAP } from './fixture-ground-truth-numeric.js';
 
 const MIB = 1024 * 1024;
 /** Reader bound we author against (mirrors packages/docx/src/zip/limits.ts). */
@@ -774,6 +775,92 @@ const PACKAGE_FIXTURES: DocxSpec[] = [
       { runs: [t('Do, Q. (2018). Cấu trúc dữ liệu trích dẫn có dấu. Tạp chí Khoa học và Công nghệ, 10(1), 5-15.')] },
     ],
   },
+
+  // ── numeric corpus (M002-S01 D016: bracketed numeric citation family) ────
+  // T4: dedicated fixtures for the numeric bracket family — [1], [1,2],
+  // [1-4], [1,2,4-5], multiple adjacent brackets, out-of-range/unmatched
+  // indices, and the malformed [1, x] that must NEVER half-emit (R007). Each
+  // numeric fixture carries a detected References section so in-range indices
+  // resolve by ORDERED INDEX to entries[index-1] (D016 — never author/year
+  // scoring); the entry blocks' "Author, X. (YYYY)" tails also parse as
+  // author-date citations, exactly like the bibliography/match corpora.
+  {
+    name: 'numeric/basic.docx',
+    title: 'Numeric brackets [1] and [1,2] resolved by index',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Literature Review')] },
+      { runs: [t('The method follows [1] and extends [1,2].')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.')] },
+      { runs: [t('Roe, M. (2018). Evidence synthesis in citation analysis. ACM Computing Surveys, 50(2), 1-25.')] },
+      { runs: [t('Lee, K. (2019). Methodological notes on reference mapping. Journal of Citation Science, 11(1), 30-48.')] },
+    ],
+  },
+
+  {
+    name: 'numeric/ranges.docx',
+    title: 'Numeric ranges [1-4] and [1,2,4-5] expand per-index',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Literature Review')] },
+      { runs: [t('Prior surveys [1-4] and focused studies [1,2,4-5] inform the model.')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.')] },
+      { runs: [t('Roe, M. (2018). Evidence synthesis in citation analysis. ACM Computing Surveys, 50(2), 1-25.')] },
+      { runs: [t('Lee, K. (2019). Methodological notes on reference mapping. Journal of Citation Science, 11(1), 30-48.')] },
+      { runs: [t('Tran, B. (2020). Case studies in structured citation pipelines. IEEE Transactions on Documentation, 14(2), 90-110.')] },
+      { runs: [t('Nguyen, H. (2021). Advances in deterministic document pipelines. Cambridge University Press.')] },
+    ],
+  },
+
+  {
+    name: 'numeric/multiple-brackets.docx',
+    title: 'Multiple adjacent numeric brackets [1][2,3] and trailing [4]',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Related Work')] },
+      { runs: [t('Adjacent brackets [1][2,3] cluster; a trailing [4] completes the set.')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.')] },
+      { runs: [t('Roe, M. (2018). Evidence synthesis in citation analysis. ACM Computing Surveys, 50(2), 1-25.')] },
+      { runs: [t('Lee, K. (2019). Methodological notes on reference mapping. Journal of Citation Science, 11(1), 30-48.')] },
+      { runs: [t('Tran, B. (2020). Case studies in structured citation pipelines. IEEE Transactions on Documentation, 14(2), 90-110.')] },
+    ],
+  },
+
+  {
+    name: 'numeric/out-of-range.docx',
+    title: 'Numeric out-of-range [5] and unmatched [0] surface conservatively',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Results')] },
+      { runs: [t('A resolved [1] sits beside an out-of-range [5] and an unmatched [0].')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.')] },
+      { runs: [t('Roe, M. (2018). Evidence synthesis in citation analysis. ACM Computing Surveys, 50(2), 1-25.')] },
+      { runs: [t('Lee, K. (2019). Methodological notes on reference mapping. Journal of Citation Science, 11(1), 30-48.')] },
+    ],
+  },
+
+  {
+    name: 'numeric/malformed.docx',
+    title: 'Malformed [1, x] never half-emits beside a clean [3]',
+    creator: 'CiteSync Fixtures',
+    withStyles: true,
+    paragraphs: [
+      { heading: true, runs: [t('Notes')] },
+      { runs: [t('A clean [3] and a malformed [1, x] share one block.')] },
+      { heading: true, runs: [t('References')] },
+      { runs: [t('Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.')] },
+      { runs: [t('Roe, M. (2018). Evidence synthesis in citation analysis. ACM Computing Surveys, 50(2), 1-25.')] },
+      { runs: [t('Lee, K. (2019). Methodological notes on reference mapping. Journal of Citation Science, 11(1), 30-48.')] },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1110,6 +1197,32 @@ function renderGroundTruth(): string[] {
     }
     lines.push('');
   }
+  lines.push(
+    '## M002-S01 numeric index map ground truth (KNOWN_NUMERIC_INDEX_MAP)',
+    '',
+    'The D016 bracket→bibliography index bindings the numeric mapping pass must produce',
+    'per fixture — single source of truth: `scripts/fixture-ground-truth-numeric.ts`,',
+    'asserted byte-stably by `packages/docx/tests/numeric-fixture.test.ts` (any change to',
+    'the fixture bytes, the model shape, the grammar or the mapping pass drifts these',
+    'tables).',
+    '',
+  );
+  for (const [name, map] of Object.entries(KNOWN_NUMERIC_INDEX_MAP)) {
+    lines.push(`### ${name} (numeric index map)`);
+    lines.push('');
+    if (map.citations.length === 0) {
+      lines.push('_no numeric citations — empty map_');
+      lines.push('');
+      continue;
+    }
+    for (const row of map.citations) {
+      const tokens = row.tokens
+        .map((t) => `${t.index}:${t.status}${t.resolvedEntryId !== undefined ? `->${t.resolvedEntryId}` : ''}`)
+        .join(' ');
+      lines.push(`- \`${row.citationId}\` → ${tokens}`);
+    }
+    lines.push('');
+  }
   return lines;
 }
 
@@ -1262,6 +1375,16 @@ function main(): void {
     '| `match/ambiguous-same-author-year.docx` | one citation, TWO entries sharing author AND year (two distinct Smith, J. 2020 works) -> AMBIGUOUS, never auto-pick (§27/§31 CS004) |',
     '| `match/near-miss-author.docx` | citation `Smith, J. (2019)` vs entry `Smith, P. (2019)` — same surname, CONTRADICTING given initial -> POSSIBLE_MISMATCH (0.525), never a confident MATCHED (§79) |',
     '| `match/near-miss-vietnamese.docx` | Nguyễn/Nguyen reaches the §25 diacritic-insensitive tier-3 signal (0.845, reported — never promoted over exact) while Đỗ/Do stays DISTINCT (tier 5, 0.6 -> POSSIBLE_MISMATCH, §24/MEM037) |',
+    '',
+    '## Corpus (numeric — M002-S01 D016 bracketed citation family)',
+    '',
+    '| fixture | purpose |',
+    '|---------|---------|',
+    '| `numeric/basic.docx` | `[1]` and `[1,2]` resolve by ordered index to entries r0/r1 (D016, never author/year scoring) |',
+    '| `numeric/ranges.docx` | `[1-4]` and `[1,2,4-5]` ranges expand per-index (4 and 5 bindings, D016) |',
+    '| `numeric/multiple-brackets.docx` | multiple adjacent brackets `[1][2,3]` plus a trailing `[4]` — distinct regions (§20) |',
+    '| `numeric/out-of-range.docx` | resolved `[1]` beside out-of-range `[5]` and unmatched `[0]` — conservative surface, never silently guessed (§79) |',
+    '| `numeric/malformed.docx` | clean `[3]` emits while malformed `[1, x]` NEVER half-emits (R007, invalid-numeric surface for CS007 in S2) |',
     '',
     '## Security samples',
     '',

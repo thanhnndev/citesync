@@ -1,0 +1,524 @@
+{
+  "metadata": {
+    "title": "Numeric brackets [1] and [1,2] resolved by index",
+    "author": "CiteSync Fixtures",
+    "created": "2024-01-15T10:30:00Z",
+    "modified": "2024-02-20T08:00:00Z"
+  },
+  "blocks": [
+    {
+      "id": "doc-p0",
+      "type": "heading",
+      "text": "Literature Review",
+      "source": {
+        "blockId": "doc-p0",
+        "paragraphIndex": 0,
+        "startOffset": 0,
+        "endOffset": 17
+      },
+      "style": "Heading1"
+    },
+    {
+      "id": "doc-p1",
+      "type": "paragraph",
+      "text": "The method follows [1] and extends [1,2].",
+      "source": {
+        "blockId": "doc-p1",
+        "paragraphIndex": 1,
+        "startOffset": 0,
+        "endOffset": 41
+      }
+    },
+    {
+      "id": "doc-p2",
+      "type": "heading",
+      "text": "References",
+      "source": {
+        "blockId": "doc-p2",
+        "paragraphIndex": 2,
+        "startOffset": 0,
+        "endOffset": 10
+      },
+      "style": "Heading1"
+    },
+    {
+      "id": "doc-p3",
+      "type": "paragraph",
+      "text": "Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.",
+      "source": {
+        "blockId": "doc-p3",
+        "paragraphIndex": 3,
+        "startOffset": 0,
+        "endOffset": 98
+      }
+    },
+    {
+      "id": "doc-p4",
+      "type": "paragraph",
+      "text": "Roe, M. (2018). Evidence synthesis in citation analysis. ACM Computing Surveys, 50(2), 1-25.",
+      "source": {
+        "blockId": "doc-p4",
+        "paragraphIndex": 4,
+        "startOffset": 0,
+        "endOffset": 92
+      }
+    },
+    {
+      "id": "doc-p5",
+      "type": "paragraph",
+      "text": "Lee, K. (2019). Methodological notes on reference mapping. Journal of Citation Science, 11(1), 30-48.",
+      "source": {
+        "blockId": "doc-p5",
+        "paragraphIndex": 5,
+        "startOffset": 0,
+        "endOffset": 101
+      }
+    }
+  ],
+  "citations": [
+    {
+      "id": "c0",
+      "raw": "[1]",
+      "family": "numeric",
+      "items": [
+        {
+          "numbers": [
+            1
+          ]
+        }
+      ],
+      "source": {
+        "blockId": "doc-p1",
+        "paragraphIndex": 1,
+        "startOffset": 19,
+        "endOffset": 22
+      },
+      "confidence": 1
+    },
+    {
+      "id": "c1",
+      "raw": "[1,2]",
+      "family": "numeric",
+      "items": [
+        {
+          "numbers": [
+            1,
+            2
+          ]
+        }
+      ],
+      "source": {
+        "blockId": "doc-p1",
+        "paragraphIndex": 1,
+        "startOffset": 35,
+        "endOffset": 40
+      },
+      "confidence": 0.97
+    },
+    {
+      "id": "c2",
+      "raw": "Doe, J. (2017)",
+      "family": "author-date",
+      "items": [
+        {
+          "firstAuthor": "Doe",
+          "authors": [
+            "Doe",
+            "J."
+          ],
+          "year": 2017
+        }
+      ],
+      "source": {
+        "blockId": "doc-p3",
+        "paragraphIndex": 3,
+        "startOffset": 0,
+        "endOffset": 14
+      },
+      "confidence": 0.837
+    },
+    {
+      "id": "c3",
+      "raw": "Roe, M. (2018)",
+      "family": "author-date",
+      "items": [
+        {
+          "firstAuthor": "Roe",
+          "authors": [
+            "Roe",
+            "M."
+          ],
+          "year": 2018
+        }
+      ],
+      "source": {
+        "blockId": "doc-p4",
+        "paragraphIndex": 4,
+        "startOffset": 0,
+        "endOffset": 14
+      },
+      "confidence": 0.837
+    },
+    {
+      "id": "c4",
+      "raw": "Lee, K. (2019)",
+      "family": "author-date",
+      "items": [
+        {
+          "firstAuthor": "Lee",
+          "authors": [
+            "Lee",
+            "K."
+          ],
+          "year": 2019
+        }
+      ],
+      "source": {
+        "blockId": "doc-p5",
+        "paragraphIndex": 5,
+        "startOffset": 0,
+        "endOffset": 14
+      },
+      "confidence": 0.837
+    }
+  ],
+  "sourceMap": {
+    "version": 1,
+    "blocks": {
+      "doc-p0": {
+        "blockId": "doc-p0",
+        "paragraphIndex": 0,
+        "runs": [
+          {
+            "runIndex": 0,
+            "text": "Literature Review",
+            "startOffset": 0,
+            "endOffset": 17
+          }
+        ]
+      },
+      "doc-p1": {
+        "blockId": "doc-p1",
+        "paragraphIndex": 1,
+        "runs": [
+          {
+            "runIndex": 0,
+            "text": "The method follows [1] and extends [1,2].",
+            "startOffset": 0,
+            "endOffset": 41
+          }
+        ]
+      },
+      "doc-p2": {
+        "blockId": "doc-p2",
+        "paragraphIndex": 2,
+        "runs": [
+          {
+            "runIndex": 0,
+            "text": "References",
+            "startOffset": 0,
+            "endOffset": 10
+          }
+        ]
+      },
+      "doc-p3": {
+        "blockId": "doc-p3",
+        "paragraphIndex": 3,
+        "runs": [
+          {
+            "runIndex": 0,
+            "text": "Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.",
+            "startOffset": 0,
+            "endOffset": 98
+          }
+        ]
+      },
+      "doc-p4": {
+        "blockId": "doc-p4",
+        "paragraphIndex": 4,
+        "runs": [
+          {
+            "runIndex": 0,
+            "text": "Roe, M. (2018). Evidence synthesis in citation analysis. ACM Computing Surveys, 50(2), 1-25.",
+            "startOffset": 0,
+            "endOffset": 92
+          }
+        ]
+      },
+      "doc-p5": {
+        "blockId": "doc-p5",
+        "paragraphIndex": 5,
+        "runs": [
+          {
+            "runIndex": 0,
+            "text": "Lee, K. (2019). Methodological notes on reference mapping. Journal of Citation Science, 11(1), 30-48.",
+            "startOffset": 0,
+            "endOffset": 101
+          }
+        ]
+      }
+    }
+  },
+  "bibliography": {
+    "outcome": "detected",
+    "heading": "References",
+    "confidence": 0.8,
+    "blockIds": [
+      "doc-p2",
+      "doc-p3",
+      "doc-p4",
+      "doc-p5"
+    ],
+    "entries": [
+      {
+        "id": "r0",
+        "raw": "Doe, J. (2017). Citation practice in digital documents. Journal of Citation Science, 12(3), 45-60.",
+        "index": 0,
+        "authors": [
+          {
+            "originalName": "Doe, J.",
+            "family": "Doe",
+            "given": "J.",
+            "key": {
+              "exact": "doe j",
+              "diacriticInsensitive": "doe j",
+              "initials": "dj"
+            }
+          }
+        ],
+        "year": 2017,
+        "title": "Citation practice in digital documents",
+        "containerTitle": "Journal of Citation Science",
+        "identifiers": {
+          "volume": "12",
+          "issue": "3",
+          "pages": "45-60"
+        },
+        "source": {
+          "blockId": "doc-p3",
+          "paragraphIndex": 3,
+          "startOffset": 0,
+          "endOffset": 98
+        },
+        "parseConfidence": 1
+      },
+      {
+        "id": "r1",
+        "raw": "Roe, M. (2018). Evidence synthesis in citation analysis. ACM Computing Surveys, 50(2), 1-25.",
+        "index": 1,
+        "authors": [
+          {
+            "originalName": "Roe, M.",
+            "family": "Roe",
+            "given": "M.",
+            "key": {
+              "exact": "roe m",
+              "diacriticInsensitive": "roe m",
+              "initials": "rm"
+            }
+          }
+        ],
+        "year": 2018,
+        "title": "Evidence synthesis in citation analysis",
+        "containerTitle": "ACM Computing Surveys",
+        "identifiers": {
+          "volume": "50",
+          "issue": "2",
+          "pages": "1-25"
+        },
+        "source": {
+          "blockId": "doc-p4",
+          "paragraphIndex": 4,
+          "startOffset": 0,
+          "endOffset": 92
+        },
+        "parseConfidence": 1
+      },
+      {
+        "id": "r2",
+        "raw": "Lee, K. (2019). Methodological notes on reference mapping. Journal of Citation Science, 11(1), 30-48.",
+        "index": 2,
+        "authors": [
+          {
+            "originalName": "Lee, K.",
+            "family": "Lee",
+            "given": "K.",
+            "key": {
+              "exact": "lee k",
+              "diacriticInsensitive": "lee k",
+              "initials": "lk"
+            }
+          }
+        ],
+        "year": 2019,
+        "title": "Methodological notes on reference mapping",
+        "containerTitle": "Journal of Citation Science",
+        "identifiers": {
+          "volume": "11",
+          "issue": "1",
+          "pages": "30-48"
+        },
+        "source": {
+          "blockId": "doc-p5",
+          "paragraphIndex": 5,
+          "startOffset": 0,
+          "endOffset": 101
+        },
+        "parseConfidence": 1
+      }
+    ]
+  },
+  "numericIndexMap": {
+    "version": 1,
+    "citations": [
+      {
+        "citationId": "c0",
+        "tokens": [
+          {
+            "index": 1,
+            "status": "resolved",
+            "resolvedEntryId": "r0",
+            "source": {
+              "blockId": "doc-p1",
+              "paragraphIndex": 1,
+              "startOffset": 20,
+              "endOffset": 21
+            }
+          }
+        ]
+      },
+      {
+        "citationId": "c1",
+        "tokens": [
+          {
+            "index": 1,
+            "status": "resolved",
+            "resolvedEntryId": "r0",
+            "source": {
+              "blockId": "doc-p1",
+              "paragraphIndex": 1,
+              "startOffset": 36,
+              "endOffset": 37
+            }
+          },
+          {
+            "index": 2,
+            "status": "resolved",
+            "resolvedEntryId": "r1",
+            "source": {
+              "blockId": "doc-p1",
+              "paragraphIndex": 1,
+              "startOffset": 38,
+              "endOffset": 39
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "matchMap": {
+    "version": 1,
+    "citations": [
+      {
+        "citationId": "c0",
+        "citationSource": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 1,
+          "startOffset": 19,
+          "endOffset": 22
+        },
+        "relationship": "MISSING_REFERENCE",
+        "score": 0,
+        "tier": 5,
+        "confidence": 0,
+        "reasons": [
+          "no-entry"
+        ]
+      },
+      {
+        "citationId": "c1",
+        "citationSource": {
+          "blockId": "doc-p1",
+          "paragraphIndex": 1,
+          "startOffset": 35,
+          "endOffset": 40
+        },
+        "relationship": "MISSING_REFERENCE",
+        "score": 0,
+        "tier": 5,
+        "confidence": 0,
+        "reasons": [
+          "no-entry"
+        ]
+      },
+      {
+        "citationId": "c2",
+        "citationSource": {
+          "blockId": "doc-p3",
+          "paragraphIndex": 3,
+          "startOffset": 0,
+          "endOffset": 14
+        },
+        "relationship": "MATCHED",
+        "matchedEntryId": "r0",
+        "score": 0.925,
+        "tier": 1,
+        "confidence": 0.925,
+        "reasons": [
+          "exact",
+          "year-match"
+        ]
+      },
+      {
+        "citationId": "c3",
+        "citationSource": {
+          "blockId": "doc-p4",
+          "paragraphIndex": 4,
+          "startOffset": 0,
+          "endOffset": 14
+        },
+        "relationship": "MATCHED",
+        "matchedEntryId": "r1",
+        "score": 0.925,
+        "tier": 1,
+        "confidence": 0.925,
+        "reasons": [
+          "exact",
+          "year-match"
+        ]
+      },
+      {
+        "citationId": "c4",
+        "citationSource": {
+          "blockId": "doc-p5",
+          "paragraphIndex": 5,
+          "startOffset": 0,
+          "endOffset": 14
+        },
+        "relationship": "MATCHED",
+        "matchedEntryId": "r2",
+        "score": 0.925,
+        "tier": 1,
+        "confidence": 0.925,
+        "reasons": [
+          "exact",
+          "year-match"
+        ]
+      }
+    ],
+    "entryStatus": [
+      {
+        "entryId": "r0",
+        "status": "CITED"
+      },
+      {
+        "entryId": "r1",
+        "status": "CITED"
+      },
+      {
+        "entryId": "r2",
+        "status": "CITED"
+      }
+    ]
+  }
+}

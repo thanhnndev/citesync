@@ -24,13 +24,15 @@
 export interface KnownCitationOccurrence {
   id: string;
   raw: string;
-  family: 'author-date';
+  family: 'author-date' | 'numeric';
   items: Array<{
     firstAuthor?: string;
     authors?: string[];
     year?: number;
     yearSuffix?: string;
     page?: string;
+    // M002-S01 — numeric-family item (NumericCitationItem { numbers }).
+    numbers?: number[];
   }>;
   source: { blockId: string; startOffset: number; endOffset: number };
   confidence: number;
@@ -271,11 +273,19 @@ export const KNOWN_OCCURRENCES: Record<string, KnownCitationOccurrence[]> = {
   ],
 
   'documents/docx/plain-text.docx': [
-    // "Smith 2024." (bare) and "[1]" (numeric) are NEVER citations — guards.
+    // "Smith 2024." (bare) is still NEVER a citation. "[1]" is now M002-S01's
+    // bracketed numeric family (D016) — emitted as family 'numeric' alongside
+    // the author-date occurrence; the no-bibliography absent outcome surfaces
+    // every index as out-of-range in doc.numericIndexMap (T3).
     O({
       id: 'c0', raw: '(Johnson 2018)', family: 'author-date',
       items: [item({ firstAuthor: 'Johnson', authors: ['Johnson'], year: 2018 })],
       source: { blockId: 'doc-p0', startOffset: 21, endOffset: 35 }, confidence: 0.85,
+    }),
+    O({
+      id: 'c1', raw: '[1]', family: 'numeric',
+      items: [item({ numbers: [1] })],
+      source: { blockId: 'doc-p1', startOffset: 9, endOffset: 12 }, confidence: 1,
     }),
   ],
 
@@ -467,6 +477,178 @@ export const KNOWN_OCCURRENCES: Record<string, KnownCitationOccurrence[]> = {
     }),
   ],
 
+  // ── M002-S01 (T4) — bracketed numeric corpus (D016) ────────────────────────
+  // Each numeric fixture carries a detected References section so in-range
+  // indices resolve by ORDERED INDEX to entries[index-1]; the entry blocks'
+  // "Author, X. (YYYY)" tails also parse as author-date citations (the same
+  // behavior as the bibliography/match corpora — never suppressed). The
+  // per-bracket bindings live in KNOWN_NUMERIC_INDEX_MAP
+  // (fixture-ground-truth-numeric.ts).
+  'numeric/basic.docx': [
+    O({
+      id: 'c0', raw: '[1]', family: 'numeric',
+      items: [item({ numbers: [1] })],
+      source: { blockId: 'doc-p1', startOffset: 19, endOffset: 22 }, confidence: 1,
+    }),
+    O({
+      id: 'c1', raw: '[1,2]', family: 'numeric',
+      items: [item({ numbers: [1, 2] })],
+      source: { blockId: 'doc-p1', startOffset: 35, endOffset: 40 }, confidence: 0.97,
+    }),
+    O({
+      id: 'c2', raw: 'Doe, J. (2017)', family: 'author-date',
+      items: [item({ firstAuthor: 'Doe', authors: ['Doe', 'J.'], year: 2017 })],
+      source: { blockId: 'doc-p3', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c3', raw: 'Roe, M. (2018)', family: 'author-date',
+      items: [item({ firstAuthor: 'Roe', authors: ['Roe', 'M.'], year: 2018 })],
+      source: { blockId: 'doc-p4', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c4', raw: 'Lee, K. (2019)', family: 'author-date',
+      items: [item({ firstAuthor: 'Lee', authors: ['Lee', 'K.'], year: 2019 })],
+      source: { blockId: 'doc-p5', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+  ],
+
+  'numeric/ranges.docx': [
+    O({
+      id: 'c0', raw: '[1-4]', family: 'numeric',
+      items: [item({ numbers: [1, 2, 3, 4] })],
+      source: { blockId: 'doc-p1', startOffset: 14, endOffset: 19 }, confidence: 0.95,
+    }),
+    O({
+      id: 'c1', raw: '[1,2,4-5]', family: 'numeric',
+      items: [item({ numbers: [1, 2, 4, 5] })],
+      source: { blockId: 'doc-p1', startOffset: 40, endOffset: 49 }, confidence: 0.9215,
+    }),
+    O({
+      id: 'c2', raw: 'Doe, J. (2017)', family: 'author-date',
+      items: [item({ firstAuthor: 'Doe', authors: ['Doe', 'J.'], year: 2017 })],
+      source: { blockId: 'doc-p3', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c3', raw: 'Roe, M. (2018)', family: 'author-date',
+      items: [item({ firstAuthor: 'Roe', authors: ['Roe', 'M.'], year: 2018 })],
+      source: { blockId: 'doc-p4', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c4', raw: 'Lee, K. (2019)', family: 'author-date',
+      items: [item({ firstAuthor: 'Lee', authors: ['Lee', 'K.'], year: 2019 })],
+      source: { blockId: 'doc-p5', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c5', raw: 'Tran, B. (2020)', family: 'author-date',
+      items: [item({ firstAuthor: 'Tran', authors: ['Tran', 'B.'], year: 2020 })],
+      source: { blockId: 'doc-p6', startOffset: 0, endOffset: 15 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c6', raw: 'Nguyen, H. (2021)', family: 'author-date',
+      items: [item({ firstAuthor: 'Nguyen', authors: ['Nguyen', 'H.'], year: 2021 })],
+      source: { blockId: 'doc-p7', startOffset: 0, endOffset: 17 }, confidence: 0.837,
+    }),
+  ],
+
+  'numeric/multiple-brackets.docx': [
+    O({
+      id: 'c0', raw: '[1]', family: 'numeric',
+      items: [item({ numbers: [1] })],
+      source: { blockId: 'doc-p1', startOffset: 18, endOffset: 21 }, confidence: 1,
+    }),
+    O({
+      id: 'c1', raw: '[2,3]', family: 'numeric',
+      items: [item({ numbers: [2, 3] })],
+      source: { blockId: 'doc-p1', startOffset: 21, endOffset: 26 }, confidence: 0.97,
+    }),
+    O({
+      id: 'c2', raw: '[4]', family: 'numeric',
+      items: [item({ numbers: [4] })],
+      source: { blockId: 'doc-p1', startOffset: 47, endOffset: 50 }, confidence: 1,
+    }),
+    O({
+      id: 'c3', raw: 'Doe, J. (2017)', family: 'author-date',
+      items: [item({ firstAuthor: 'Doe', authors: ['Doe', 'J.'], year: 2017 })],
+      source: { blockId: 'doc-p3', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c4', raw: 'Roe, M. (2018)', family: 'author-date',
+      items: [item({ firstAuthor: 'Roe', authors: ['Roe', 'M.'], year: 2018 })],
+      source: { blockId: 'doc-p4', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c5', raw: 'Lee, K. (2019)', family: 'author-date',
+      items: [item({ firstAuthor: 'Lee', authors: ['Lee', 'K.'], year: 2019 })],
+      source: { blockId: 'doc-p5', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c6', raw: 'Tran, B. (2020)', family: 'author-date',
+      items: [item({ firstAuthor: 'Tran', authors: ['Tran', 'B.'], year: 2020 })],
+      source: { blockId: 'doc-p6', startOffset: 0, endOffset: 15 }, confidence: 0.837,
+    }),
+  ],
+
+  'numeric/out-of-range.docx': [
+    O({
+      id: 'c0', raw: '[1]', family: 'numeric',
+      items: [item({ numbers: [1] })],
+      source: { blockId: 'doc-p1', startOffset: 11, endOffset: 14 }, confidence: 1,
+    }),
+    // Out-of-range [5] (only 3 entries) — surfaced, never dropped (D016).
+    O({
+      id: 'c1', raw: '[5]', family: 'numeric',
+      items: [item({ numbers: [5] })],
+      source: { blockId: 'doc-p1', startOffset: 43, endOffset: 46 }, confidence: 1,
+    }),
+    // Unmatched [0] (below the 1-based index system) — surfaced, never guessed.
+    O({
+      id: 'c2', raw: '[0]', family: 'numeric',
+      items: [item({ numbers: [0] })],
+      source: { blockId: 'doc-p1', startOffset: 64, endOffset: 67 }, confidence: 1,
+    }),
+    O({
+      id: 'c3', raw: 'Doe, J. (2017)', family: 'author-date',
+      items: [item({ firstAuthor: 'Doe', authors: ['Doe', 'J.'], year: 2017 })],
+      source: { blockId: 'doc-p3', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c4', raw: 'Roe, M. (2018)', family: 'author-date',
+      items: [item({ firstAuthor: 'Roe', authors: ['Roe', 'M.'], year: 2018 })],
+      source: { blockId: 'doc-p4', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c5', raw: 'Lee, K. (2019)', family: 'author-date',
+      items: [item({ firstAuthor: 'Lee', authors: ['Lee', 'K.'], year: 2019 })],
+      source: { blockId: 'doc-p5', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+  ],
+
+  // Malformed [1, x] must NEVER half-emit (R007): only the clean [3] and the
+  // entry tails appear — the malformed bracket stays a CS007 invalid-numeric
+  // surface for S2 (never a citation).
+  'numeric/malformed.docx': [
+    O({
+      id: 'c0', raw: '[3]', family: 'numeric',
+      items: [item({ numbers: [3] })],
+      source: { blockId: 'doc-p1', startOffset: 8, endOffset: 11 }, confidence: 1,
+    }),
+    O({
+      id: 'c1', raw: 'Doe, J. (2017)', family: 'author-date',
+      items: [item({ firstAuthor: 'Doe', authors: ['Doe', 'J.'], year: 2017 })],
+      source: { blockId: 'doc-p3', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c2', raw: 'Roe, M. (2018)', family: 'author-date',
+      items: [item({ firstAuthor: 'Roe', authors: ['Roe', 'M.'], year: 2018 })],
+      source: { blockId: 'doc-p4', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+    O({
+      id: 'c3', raw: 'Lee, K. (2019)', family: 'author-date',
+      items: [item({ firstAuthor: 'Lee', authors: ['Lee', 'K.'], year: 2019 })],
+      source: { blockId: 'doc-p5', startOffset: 0, endOffset: 14 }, confidence: 0.837,
+    }),
+  ],
+
   // Macro-carriage sample: no citations.
   'security/vba-sample.docx': [],
 };
@@ -503,5 +685,29 @@ export interface KnownEntryStatusRow {
 export interface KnownMatchMap {
   citations: KnownMatchRow[];
   entryStatus: KnownEntryStatusRow[];
+}
+
+// ---------------------------------------------------------------------------
+// M002-S01 (T4) — D016 numeric index map ground-truth row types (the table
+// itself lives in the sibling data module `fixture-ground-truth-numeric.ts`).
+// ---------------------------------------------------------------------------
+
+/** Expected D016 per-index binding (token-level). */
+export interface KnownNumericToken {
+  index: number;
+  status: 'resolved' | 'out-of-range' | 'unmatched';
+  resolvedEntryId?: string;
+}
+
+/** Expected D016 per-citation token map row. */
+export interface KnownNumericCitationMap {
+  citationId: string;
+  tokens: KnownNumericToken[];
+}
+
+/** Expected full numeric index map for one fixture. */
+export interface KnownNumericIndexMap {
+  version: 1;
+  citations: KnownNumericCitationMap[];
 }
 

@@ -54,6 +54,16 @@ Re-running the script rewrites byte-identical files.
 | `match/near-miss-author.docx` | citation `Smith, J. (2019)` vs entry `Smith, P. (2019)` — same surname, CONTRADICTING given initial -> POSSIBLE_MISMATCH (0.525), never a confident MATCHED (§79) |
 | `match/near-miss-vietnamese.docx` | Nguyễn/Nguyen reaches the §25 diacritic-insensitive tier-3 signal (0.845, reported — never promoted over exact) while Đỗ/Do stays DISTINCT (tier 5, 0.6 -> POSSIBLE_MISMATCH, §24/MEM037) |
 
+## Corpus (numeric — M002-S01 D016 bracketed citation family)
+
+| fixture | purpose |
+|---------|---------|
+| `numeric/basic.docx` | `[1]` and `[1,2]` resolve by ordered index to entries r0/r1 (D016, never author/year scoring) |
+| `numeric/ranges.docx` | `[1-4]` and `[1,2,4-5]` ranges expand per-index (4 and 5 bindings, D016) |
+| `numeric/multiple-brackets.docx` | multiple adjacent brackets `[1][2,3]` plus a trailing `[4]` — distinct regions (§20) |
+| `numeric/out-of-range.docx` | resolved `[1]` beside out-of-range `[5]` and unmatched `[0]` — conservative surface, never silently guessed (§79) |
+| `numeric/malformed.docx` | clean `[3]` emits while malformed `[1, x]` NEVER half-emits (R007, invalid-numeric surface for CS007 in S2) |
+
 ## Security samples
 
 | fixture | expected reader behavior |
@@ -140,6 +150,7 @@ bytes, the model shape, the grammar or the normalization drifts these tables).
 ### documents/docx/plain-text.docx
 
 - `c0` `(Johnson 2018)` @ `doc-p0[21,35)` author-date conf 0.85 → {"firstAuthor":"Johnson","authors":["Johnson"],"year":2018}
+- `c1` `[1]` @ `doc-p1[9,12)` numeric conf 1 → {"numbers":[1]}
 
 ### bibliography/en-references.docx
 
@@ -198,6 +209,50 @@ bytes, the model shape, the grammar or the normalization drifts these tables).
 - `c2` `Nguyen, V. A. (2015)` @ `doc-p4[0,20)` author-date conf 0.837 → {"firstAuthor":"Nguyen","authors":["Nguyen","V. A."],"year":2015}
 - `c3` `Do, Q. (2018)` @ `doc-p5[0,13)` author-date conf 0.837 → {"firstAuthor":"Do","authors":["Do","Q."],"year":2018}
 
+### numeric/basic.docx
+
+- `c0` `[1]` @ `doc-p1[19,22)` numeric conf 1 → {"numbers":[1]}
+- `c1` `[1,2]` @ `doc-p1[35,40)` numeric conf 0.97 → {"numbers":[1,2]}
+- `c2` `Doe, J. (2017)` @ `doc-p3[0,14)` author-date conf 0.837 → {"firstAuthor":"Doe","authors":["Doe","J."],"year":2017}
+- `c3` `Roe, M. (2018)` @ `doc-p4[0,14)` author-date conf 0.837 → {"firstAuthor":"Roe","authors":["Roe","M."],"year":2018}
+- `c4` `Lee, K. (2019)` @ `doc-p5[0,14)` author-date conf 0.837 → {"firstAuthor":"Lee","authors":["Lee","K."],"year":2019}
+
+### numeric/ranges.docx
+
+- `c0` `[1-4]` @ `doc-p1[14,19)` numeric conf 0.95 → {"numbers":[1,2,3,4]}
+- `c1` `[1,2,4-5]` @ `doc-p1[40,49)` numeric conf 0.9215 → {"numbers":[1,2,4,5]}
+- `c2` `Doe, J. (2017)` @ `doc-p3[0,14)` author-date conf 0.837 → {"firstAuthor":"Doe","authors":["Doe","J."],"year":2017}
+- `c3` `Roe, M. (2018)` @ `doc-p4[0,14)` author-date conf 0.837 → {"firstAuthor":"Roe","authors":["Roe","M."],"year":2018}
+- `c4` `Lee, K. (2019)` @ `doc-p5[0,14)` author-date conf 0.837 → {"firstAuthor":"Lee","authors":["Lee","K."],"year":2019}
+- `c5` `Tran, B. (2020)` @ `doc-p6[0,15)` author-date conf 0.837 → {"firstAuthor":"Tran","authors":["Tran","B."],"year":2020}
+- `c6` `Nguyen, H. (2021)` @ `doc-p7[0,17)` author-date conf 0.837 → {"firstAuthor":"Nguyen","authors":["Nguyen","H."],"year":2021}
+
+### numeric/multiple-brackets.docx
+
+- `c0` `[1]` @ `doc-p1[18,21)` numeric conf 1 → {"numbers":[1]}
+- `c1` `[2,3]` @ `doc-p1[21,26)` numeric conf 0.97 → {"numbers":[2,3]}
+- `c2` `[4]` @ `doc-p1[47,50)` numeric conf 1 → {"numbers":[4]}
+- `c3` `Doe, J. (2017)` @ `doc-p3[0,14)` author-date conf 0.837 → {"firstAuthor":"Doe","authors":["Doe","J."],"year":2017}
+- `c4` `Roe, M. (2018)` @ `doc-p4[0,14)` author-date conf 0.837 → {"firstAuthor":"Roe","authors":["Roe","M."],"year":2018}
+- `c5` `Lee, K. (2019)` @ `doc-p5[0,14)` author-date conf 0.837 → {"firstAuthor":"Lee","authors":["Lee","K."],"year":2019}
+- `c6` `Tran, B. (2020)` @ `doc-p6[0,15)` author-date conf 0.837 → {"firstAuthor":"Tran","authors":["Tran","B."],"year":2020}
+
+### numeric/out-of-range.docx
+
+- `c0` `[1]` @ `doc-p1[11,14)` numeric conf 1 → {"numbers":[1]}
+- `c1` `[5]` @ `doc-p1[43,46)` numeric conf 1 → {"numbers":[5]}
+- `c2` `[0]` @ `doc-p1[64,67)` numeric conf 1 → {"numbers":[0]}
+- `c3` `Doe, J. (2017)` @ `doc-p3[0,14)` author-date conf 0.837 → {"firstAuthor":"Doe","authors":["Doe","J."],"year":2017}
+- `c4` `Roe, M. (2018)` @ `doc-p4[0,14)` author-date conf 0.837 → {"firstAuthor":"Roe","authors":["Roe","M."],"year":2018}
+- `c5` `Lee, K. (2019)` @ `doc-p5[0,14)` author-date conf 0.837 → {"firstAuthor":"Lee","authors":["Lee","K."],"year":2019}
+
+### numeric/malformed.docx
+
+- `c0` `[3]` @ `doc-p1[8,11)` numeric conf 1 → {"numbers":[3]}
+- `c1` `Doe, J. (2017)` @ `doc-p3[0,14)` author-date conf 0.837 → {"firstAuthor":"Doe","authors":["Doe","J."],"year":2017}
+- `c2` `Roe, M. (2018)` @ `doc-p4[0,14)` author-date conf 0.837 → {"firstAuthor":"Roe","authors":["Roe","M."],"year":2018}
+- `c3` `Lee, K. (2019)` @ `doc-p5[0,14)` author-date conf 0.837 → {"firstAuthor":"Lee","authors":["Lee","K."],"year":2019}
+
 ### security/vba-sample.docx
 
 _no citations_
@@ -243,6 +298,39 @@ _detected section without entry blocks — parsing scope is exactly S02's blockI
 
 - `r0` @ `doc-p4[0,113)` conf 0.9412 → authors=[Nguyen, V. A.] year=2015 title="Phương pháp trích dẫn tự động trong văn bản khoa học" container="Nhà xuất bản Đại học Quốc gia Hà Nội"
 - `r1` @ `doc-p5[0,93)` conf 1 → authors=[Do, Q.] year=2018 title="Cấu trúc dữ liệu trích dẫn có dấu" container="Tạp chí Khoa học và Công nghệ" identifiers={"volume":"10","issue":"1","pages":"5-15"}
+
+### numeric/basic.docx (references)
+
+- `r0` @ `doc-p3[0,98)` conf 1 → authors=[Doe, J.] year=2017 title="Citation practice in digital documents" container="Journal of Citation Science" identifiers={"volume":"12","issue":"3","pages":"45-60"}
+- `r1` @ `doc-p4[0,92)` conf 1 → authors=[Roe, M.] year=2018 title="Evidence synthesis in citation analysis" container="ACM Computing Surveys" identifiers={"volume":"50","issue":"2","pages":"1-25"}
+- `r2` @ `doc-p5[0,101)` conf 1 → authors=[Lee, K.] year=2019 title="Methodological notes on reference mapping" container="Journal of Citation Science" identifiers={"volume":"11","issue":"1","pages":"30-48"}
+
+### numeric/ranges.docx (references)
+
+- `r0` @ `doc-p3[0,98)` conf 1 → authors=[Doe, J.] year=2017 title="Citation practice in digital documents" container="Journal of Citation Science" identifiers={"volume":"12","issue":"3","pages":"45-60"}
+- `r1` @ `doc-p4[0,92)` conf 1 → authors=[Roe, M.] year=2018 title="Evidence synthesis in citation analysis" container="ACM Computing Surveys" identifiers={"volume":"50","issue":"2","pages":"1-25"}
+- `r2` @ `doc-p5[0,101)` conf 1 → authors=[Lee, K.] year=2019 title="Methodological notes on reference mapping" container="Journal of Citation Science" identifiers={"volume":"11","issue":"1","pages":"30-48"}
+- `r3` @ `doc-p6[0,114)` conf 1 → authors=[Tran, B.] year=2020 title="Case studies in structured citation pipelines" container="IEEE Transactions on Documentation" identifiers={"volume":"14","issue":"2","pages":"90-110"}
+- `r4` @ `doc-p7[0,92)` conf 0.9412 → authors=[Nguyen, H.] year=2021 title="Advances in deterministic document pipelines" container="Cambridge University Press"
+
+### numeric/multiple-brackets.docx (references)
+
+- `r0` @ `doc-p3[0,98)` conf 1 → authors=[Doe, J.] year=2017 title="Citation practice in digital documents" container="Journal of Citation Science" identifiers={"volume":"12","issue":"3","pages":"45-60"}
+- `r1` @ `doc-p4[0,92)` conf 1 → authors=[Roe, M.] year=2018 title="Evidence synthesis in citation analysis" container="ACM Computing Surveys" identifiers={"volume":"50","issue":"2","pages":"1-25"}
+- `r2` @ `doc-p5[0,101)` conf 1 → authors=[Lee, K.] year=2019 title="Methodological notes on reference mapping" container="Journal of Citation Science" identifiers={"volume":"11","issue":"1","pages":"30-48"}
+- `r3` @ `doc-p6[0,114)` conf 1 → authors=[Tran, B.] year=2020 title="Case studies in structured citation pipelines" container="IEEE Transactions on Documentation" identifiers={"volume":"14","issue":"2","pages":"90-110"}
+
+### numeric/out-of-range.docx (references)
+
+- `r0` @ `doc-p3[0,98)` conf 1 → authors=[Doe, J.] year=2017 title="Citation practice in digital documents" container="Journal of Citation Science" identifiers={"volume":"12","issue":"3","pages":"45-60"}
+- `r1` @ `doc-p4[0,92)` conf 1 → authors=[Roe, M.] year=2018 title="Evidence synthesis in citation analysis" container="ACM Computing Surveys" identifiers={"volume":"50","issue":"2","pages":"1-25"}
+- `r2` @ `doc-p5[0,101)` conf 1 → authors=[Lee, K.] year=2019 title="Methodological notes on reference mapping" container="Journal of Citation Science" identifiers={"volume":"11","issue":"1","pages":"30-48"}
+
+### numeric/malformed.docx (references)
+
+- `r0` @ `doc-p3[0,98)` conf 1 → authors=[Doe, J.] year=2017 title="Citation practice in digital documents" container="Journal of Citation Science" identifiers={"volume":"12","issue":"3","pages":"45-60"}
+- `r1` @ `doc-p4[0,92)` conf 1 → authors=[Roe, M.] year=2018 title="Evidence synthesis in citation analysis" container="ACM Computing Surveys" identifiers={"volume":"50","issue":"2","pages":"1-25"}
+- `r2` @ `doc-p5[0,101)` conf 1 → authors=[Lee, K.] year=2019 title="Methodological notes on reference mapping" container="Journal of Citation Science" identifiers={"volume":"11","issue":"1","pages":"30-48"}
 
 ## S04 match-state ground truth (KNOWN_MATCHES)
 
@@ -315,6 +403,7 @@ fixture bytes, the model shape or the orchestration policy drifts these tables).
 ### documents/docx/plain-text.docx (match states)
 
 - `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
 
 ### bibliography/no-bibliography.docx (match states)
 
@@ -383,4 +472,87 @@ fixture bytes, the model shape or the orchestration policy drifts these tables).
 ### security/vba-sample.docx (match states)
 
 _no citations — empty match map_
+
+### numeric/basic.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c3` → MATCHED → `r1` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c4` → MATCHED → `r2` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED | r2:CITED
+
+### numeric/ranges.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c3` → MATCHED → `r1` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c4` → MATCHED → `r2` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c5` → MATCHED → `r3` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c6` → MATCHED → `r4` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED | r2:CITED | r3:CITED | r4:CITED
+
+### numeric/multiple-brackets.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c3` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c4` → MATCHED → `r1` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c5` → MATCHED → `r2` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c6` → MATCHED → `r3` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED | r2:CITED | r3:CITED
+
+### numeric/out-of-range.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c2` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c3` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c4` → MATCHED → `r1` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c5` → MATCHED → `r2` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED | r2:CITED
+
+### numeric/malformed.docx (match states)
+
+- `c0` → MISSING_REFERENCE score 0 tier 5 conf 0 reasons=[no-entry]
+- `c1` → MATCHED → `r0` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c2` → MATCHED → `r1` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- `c3` → MATCHED → `r2` score 0.925 tier 1 conf 0.925 reasons=[exact,year-match]
+- entries → r0:CITED | r1:CITED | r2:CITED
+
+## M002-S01 numeric index map ground truth (KNOWN_NUMERIC_INDEX_MAP)
+
+The D016 bracket→bibliography index bindings the numeric mapping pass must produce
+per fixture — single source of truth: `scripts/fixture-ground-truth-numeric.ts`,
+asserted byte-stably by `packages/docx/tests/numeric-fixture.test.ts` (any change to
+the fixture bytes, the model shape, the grammar or the mapping pass drifts these
+tables).
+
+### numeric/basic.docx (numeric index map)
+
+- `c0` → 1:resolved->r0
+- `c1` → 1:resolved->r0 2:resolved->r1
+
+### numeric/ranges.docx (numeric index map)
+
+- `c0` → 1:resolved->r0 2:resolved->r1 3:resolved->r2 4:resolved->r3
+- `c1` → 1:resolved->r0 2:resolved->r1 4:resolved->r3 5:resolved->r4
+
+### numeric/multiple-brackets.docx (numeric index map)
+
+- `c0` → 1:resolved->r0
+- `c1` → 2:resolved->r1 3:resolved->r2
+- `c2` → 4:resolved->r3
+
+### numeric/out-of-range.docx (numeric index map)
+
+- `c0` → 1:resolved->r0
+- `c1` → 5:out-of-range
+- `c2` → 0:unmatched
+
+### numeric/malformed.docx (numeric index map)
+
+- `c0` → 3:resolved->r2
 
