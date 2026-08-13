@@ -1,0 +1,247 @@
+/*
+ * T5 — minimal app styling: system font stack, simple spacing, severity
+ * colors (ERROR red / WARNING yellow / AMBIGUOUS orange / INFO gray).
+ * No UI framework — the shell stays dependency-free.
+ */
+
+:root {
+  color-scheme: light;
+  --color-accent: #1a5cff;
+  --color-border: #d0d7de;
+  --color-text: #1f2328;
+  --color-muted: #656d76;
+  --color-error: #d1242f;
+  --color-warning: #9a6700;
+  --color-ambiguous: #bc4c00;
+  --color-info: #57606a;
+  --color-done: #1a7f37;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--color-text);
+  background: #f6f8fa;
+}
+
+.app-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.processing-badge {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Drop zone                                                           */
+/* ------------------------------------------------------------------ */
+
+.drop-zone {
+  position: relative;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  padding: 36px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.drop-zone-dragging {
+  border-color: var(--color-accent);
+  background: #eef4ff;
+}
+
+/*
+ * The file input is an invisible full-zone overlay: click anywhere opens the
+ * picker, Playwright setInputFiles still works on it (T6 e2e — it only needs
+ * the element, not visibility), and drag & drop events bubble to the section.
+ */
+.file-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.drop-zone-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.drop-zone-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.drop-zone-invalid {
+  margin: 12px 0 0;
+  color: var(--color-error);
+  font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Stage checklist (PRD §61)                                           */
+/* ------------------------------------------------------------------ */
+
+.stage-checklist h2 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+}
+
+.stage-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #ffffff;
+}
+
+.stage-marker {
+  width: 1.1em;
+  text-align: center;
+}
+
+.stage-item.stage-done .stage-marker {
+  color: var(--color-done);
+}
+
+.stage-item.stage-current {
+  border-color: var(--color-accent);
+}
+
+.stage-item.stage-current .stage-marker {
+  color: var(--color-accent);
+}
+
+.stage-item.stage-pending {
+  color: var(--color-muted);
+}
+
+.stage-name {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ------------------------------------------------------------------ */
+/* Report summary (D024)                                               */
+/* ------------------------------------------------------------------ */
+
+.report-summary {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.report-summary h2 {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+}
+
+.severity-counts {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.severity-count {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #f6f8fa;
+}
+
+.severity-count .severity-value {
+  font-weight: 700;
+}
+
+.severity-error .severity-value {
+  color: var(--color-error);
+}
+
+.severity-warning .severity-value {
+  color: var(--color-warning);
+}
+
+.severity-ambiguous .severity-value {
+  color: var(--color-ambiguous);
+}
+
+.severity-info .severity-value {
+  color: var(--color-info);
+}
+
+.report-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Error panel (R016)                                                  */
+/* ------------------------------------------------------------------ */
+
+.error-panel {
+  background: #ffffff;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+
+.error-panel strong {
+  color: var(--color-error);
+}
+
+.error-message {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.9rem;
+}

@@ -34,6 +34,9 @@ export abstract class DocxReaderError extends Error {
 export class NotADocxError extends DocxReaderError {
   constructor(detail?: string) {
     super('Not a DOCX/OOXML package', detail);
+    // Stable name — must survive production minification: esbuild mangles
+    // class names, which would corrupt the D021 err.name discriminator.
+    this.name = 'NotADocxError';
   }
 }
 
@@ -48,6 +51,8 @@ export class NotADocxError extends DocxReaderError {
 export class ZipBombError extends DocxReaderError {
   constructor(detail?: string) {
     super('Archive exceeds resource bounds (possible zip bomb)', detail);
+    // Stable name — must survive production minification (see NotADocxError).
+    this.name = 'ZipBombError';
   }
 }
 
@@ -62,6 +67,8 @@ export class ZipBombError extends DocxReaderError {
 export class UnsupportedFormatError extends DocxReaderError {
   constructor(detail?: string) {
     super('Unsupported DOCX format/feature', detail);
+    // Stable name — must survive production minification (see NotADocxError).
+    this.name = 'UnsupportedFormatError';
   }
 }
 
@@ -75,5 +82,7 @@ export class UnsupportedFormatError extends DocxReaderError {
 export class ParseFailureError extends DocxReaderError {
   constructor(detail?: string) {
     super('DOCX part failed to parse', detail);
+    // Stable name — must survive production minification (see NotADocxError).
+    this.name = 'ParseFailureError';
   }
 }

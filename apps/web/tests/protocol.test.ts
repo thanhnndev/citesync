@@ -133,9 +133,20 @@ describe('classifyWorkerError', () => {
     },
   );
 
-  it('collapses unknown error names to name "Error" with String(err) message', () => {
+  it('reads the message off a plain {name, message} envelope (postMessage structured clone)', () => {
+    // The worker forwards its error envelope over postMessage — structured
+    // clone strips the Error prototype, so the app receives a PLAIN object
+    // (`instanceof Error` is false) whose message must be read off the field.
+    const envelope = { name: 'NotADocxError', message: 'Not a DOCX/OOXML package' };
+    expect(classifyWorkerError(envelope)).toEqual(envelope);
+  });
+
+  it('preserves name+message verbatim for unknown but structured errors', () => {
+    // A real Error with an unknown name keeps its diagnostic message — the
+    // worker-side classifier already collapsed unknown failures to 'Error'
+    // with a real message; re-collapsing here would lose it ([object Object]).
     const err = Object.assign(new Error('boom'), { name: 'TypeError' });
-    expect(classifyWorkerError(err)).toEqual({ name: 'Error', message: String(err) });
+    expect(classifyWorkerError(err)).toEqual({ name: 'TypeError', message: 'boom' });
   });
 
   it('is total for non-Error thrown values (worker catch-all)', () => {

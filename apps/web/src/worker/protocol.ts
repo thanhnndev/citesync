@@ -119,11 +119,29 @@ const KNOWN_ERROR_NAMES: readonly string[] = [
   'UnsupportedFormatError',
 ];
 
-/** Classify an arbitrary thrown value into the {name, message} envelope. */
+/**
+ * Classify an arbitrary thrown value into the {name, message} envelope.
+ *
+ * Handles BOTH shapes the app can see: a real Error instance (thrown on the
+ * app side) and the plain {name, message} object the worker forwards over
+ * postMessage (structured clone strips the prototype — `instanceof Error`
+ * is false there, so the message must be read off the object, not String()).
+ *
+ * A structured {name, message} pair is preserved VERBATIM even when `name`
+ * is not one of the known DocxReaderError names: the worker-side classifier
+ * already collapsed unknown failures to name 'Error' with a real message, so
+ * collapsing AGAIN here would throw that diagnostic away (String(err) on a
+ * plain object is '[object Object]').
+ */
 export function classifyWorkerError(err: unknown): { name: string; message: string } {
-  const name = (err as { name?: unknown } | null | undefined)?.name;
+  const candidate = err as { name?: unknown; message?: unknown } | null | undefined;
+  const name = candidate?.name;
+  const rawMessage = candidate?.message;
+  if (typeof name === 'string' && typeof rawMessage === 'string') {
+    return { name, message: rawMessage };
+  }
   if (typeof name === 'string' && KNOWN_ERROR_NAMES.includes(name)) {
-    return { name, message: err instanceof Error ? err.message : String(err) };
+    return { name, message: String(err) };
   }
   return { name: 'Error', message: String(err) };
 }

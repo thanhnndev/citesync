@@ -1,66 +1,57 @@
 /**
- * T1 proof UI, now wired to the T3 typed protocol client (T5 replaces this
- * with the real shell).
+ * T5 — the complete CiteSync shell (replaces the T1/T3 proof UI).
  *
- * Flow: pick a .docx → File.arrayBuffer() → runAnalysis (correlated request,
- * bytes transferred) → stage messages render a live checklist (PRD §61) →
- * done renders the canonical CLI-compatible report JSON (D024); error renders
- * the {name, message} envelope mapped to friendly text (R016).
+ * Layout: header (title + always-present ProcessingBadge) → DropZone →
+ * §61 StageChecklist → ReportSummary (done) | error panel (error).
+ *
+ * data-testid contract (FROZEN for T6 e2e, must never change):
+ *   - file-input, drop-zone           (DropZone)
+ *   - processing-badge                (always mounted; text switches with state)
+ *   - stage-{stage}                   (StageChecklist, 5 items)
+ *   - report-summary                  (done)
+ *   - error-panel                     (error)
  */
 
-import { useState } from 'react';
-import type { PipelineStage } from '@citesync/core';
-import { createLintWorker, runAnalysis } from './worker/client';
-import type { AnalyzeResult } from './worker/client';
+import DropZone from './components/DropZone';
+import ReportSummary from './components/ReportSummary';
+import StageChecklist from './components/StageChecklist';
+import { useAnalyze } from './hooks/useAnalyze';
+import type { AnalyzeStatus } from './hooks/useAnalyze';
 import { describeWorkerError } from './worker/protocol';
+import './app.css';
+
+/** Badge text per state — the badge element ALWAYS exists, text drives e2e. */
+const BADGE_TEXT: Record<AnalyzeStatus, string> = {
+  idle: 'Ready — analysis runs locally in your browser',
+  analyzing: 'Processing locally',
+  done: 'Processed locally — never left this device',
+  error: 'Analysis runs locally in your browser',
+};
 
 export default function App() {
-  const [stages, setStages] = useState<PipelineStage[]>([]);
-  const [result, setResult] = useState<AnalyzeResult | null>(null);
-  const [error, setError] = useState<{ name: string; message: string } | null>(null);
-
-  async function analyzeFile(file: File) {
-    setStages([]);
-    setResult(null);
-    setError(null);
-    try {
-      const worker = createLintWorker();
-      const bytes = await file.arrayBuffer();
-      // runAnalysis terminates the worker on the terminal envelope.
-      const analysis = await runAnalysis(worker, bytes, file.name, {
-        onStage: (stage) => setStages((prev) => [...prev, stage]),
-      });
-      setResult(analysis);
-    } catch (err) {
-      setError(err as { name: string; message: string });
-    }
-  }
+  const { state, analyze } = useAnalyze();
 
   return (
-    <main>
-      <h1>CiteSync — worker proof</h1>
-      <input
-        type="file"
-        accept=".docx"
-        data-testid="file-input"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void analyzeFile(file);
-        }}
-      />
-      {stages.length > 0 && (
-        <ol data-testid="stage-list">
-          {stages.map((stage) => (
-            <li key={stage}>{stage}</li>
-          ))}
-        </ol>
+    <main className="app-shell">
+      <header className="app-header">
+        <h1>CiteSync</h1>
+        <p className="processing-badge" data-testid="processing-badge" role="status">
+          {BADGE_TEXT[state.status]}
+        </p>
+      </header>
+
+      <DropZone onAnalyze={analyze} />
+
+      <StageChecklist stages={state.stages} analyzing={state.status === 'analyzing'} />
+
+      {state.status === 'done' && state.report !== undefined && (
+        <ReportSummary report={state.report} />
       )}
-      {result !== null && (
-        <pre data-testid="report-json">{JSON.stringify(result.report, null, 2)}</pre>
-      )}
-      {error !== null && (
-        <div data-testid="error-panel">
-          <strong>{describeWorkerError(error.name)}</strong> ({error.name}) — {error.message}
+
+      {state.status === 'error' && state.error !== undefined && (
+        <div className="error-panel" data-testid="error-panel" role="alert">
+          <strong>{describeWorkerError(state.error.name)}</strong>
+          <span className="error-message">{state.error.message}</span>
         </div>
       )}
     </main>
