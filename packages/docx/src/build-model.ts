@@ -40,6 +40,8 @@
 
 import type {
   AcademicDocument,
+  BibliographyDetectionResult,
+  BibliographySection,
   BlockSourceMap,
   DocumentBlock,
   DocumentMetadata,
@@ -58,7 +60,7 @@ import { extractCoreProperties } from './metadata.js';
 import { parseBody } from './parser/document.js';
 import { noteToBlock, scanNotePart } from './parser/footnotes.js';
 import { loadStyleMap } from './parser/style.js';
-import { detectBibliography } from './bibliography/detect.js';
+import { detectBibliography, sectionBlockIdsFromHeading } from './bibliography/detect.js';
 import { buildNumericIndexMap } from './citations/index.js';
 import { extractCitations, parseReferences } from './extract.js';
 import { buildMatchMap } from './match/index.js';
@@ -86,6 +88,30 @@ export interface BuildModelOptions {
    * callback can never alter the assembled model.
    */
   onStage?: (stage: PipelineStage) => void;
+  /**
+   * M003 recovery (PRD §63 ask-user, D005/D009): ordered bibliography
+   * section block ids — heading block FIRST, then the section blocks in
+   * document order, the same shape as the detected-path
+   * `BibliographySection.blockIds` (MEM097). A user picks a candidate from a
+   * below-threshold run and the app re-runs with the picked section.
+   *
+   * When present, the section is built DIRECTLY from these ids and
+   * `detectBibliography` is SKIPPED — the human's explicit choice replaces
+   * the engine's threshold decision (R004: the engine never silently
+   * guesses below threshold, but the ask-user flow lets the user direct):
+   *   - a single id is extended with the consecutive reference-like run via
+   *     {@link sectionBlockIdsFromHeading} (same span rule as detection);
+   *   - a multi-id list is used as-is (the caller already chose the span);
+   *   - an unresolvable first id yields a deterministic EMPTY section
+   *     (`{ outcome:'detected', heading:'', blockIds:[] }`) — no crash, no
+   *     silent guess. The recovered section carries no `confidence` (a
+   *     user-directed section has no detector score).
+   *
+   * Additive only: absent/undefined keeps detection behavior byte-identical
+   * (R008), and the 'detecting-bibliography' stage still fires on both paths
+   * (PIPELINE_STAGES 5-stage invariant).
+   */
+  bibliographyBlockIds?: string[];
 }
 
 /**
@@ -149,17 +175,22 @@ export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): Ac
   const parseIssues = collectParseIssues(documentXml, body, footnoteNotes, endnoteNotes);
   const security = scanSecurity(parts);
 
-  // S02 (bibliography detection, D009): run the weighted-signal detector over
-  // the BODY blocks only — bibliographies live in the document part, never in
-  // notes. `detected` fills doc.bibliography with the section; `below-threshold`
-  // still fills it (candidates + best confidence) so the ask-user path is
-  // model-first-class (R004 / PRD §17 — the engine never silently guesses a
-  // section); `none` leaves it undefined (absent bibliography). detectBibliography
-  // is pure, so this preserves buildModel determinism (R008).
+  // S02 (bibliography detection, D009) / M003 recovery (PRD §63): the BODY
+  // blocks are the detection scope — bibliographies live in the document
+  // part, never in notes. With a user-selected section (`bibliographyBlockIds`)
+  // the section is built straight from the given ids (the human's explicit
+  // pick replaces the engine's threshold decision); otherwise the
+  // weighted-signal detector runs unchanged. `detected` fills
+  // doc.bibliography with the section; `below-threshold` still fills it
+  // (candidates + best confidence) so the ask-user path is model-first-class
+  // (R004 / PRD §17 — the engine never silently guesses a section); `none`
+  // leaves it undefined (absent bibliography). Both branches are pure
+  // functions of the input, preserving buildModel determinism (R008).
 
-  // Stage 2/5 (PRD §61): bibliography detection (S02, D009).
+  // Stage 2/5 (PRD §61): bibliography detection (S02, D009). The stage fires
+  // on BOTH paths (detected + recovery) — PIPELINE_STAGES 5-stage invariant.
   onStage?.('detecting-bibliography');
-  const bibResult = detectBibliography(body.entries.map((e) => e.block));
+  const bodyBlocks = body.entries.map((e) => e.block);
 
   const doc: AcademicDocument = {
     metadata,
@@ -167,21 +198,36 @@ export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): Ac
     citations: [],
     sourceMap: { version: 1, blocks: sourceMapBlocks },
   };
-  if (bibResult.outcome === 'detected') {
-    doc.bibliography = bibResult.section;
-    // S03 (T06): parse the detected section's blockIds span into §21 entries
+
+  let section: BibliographySection | undefined;
+  let belowThreshold:
+    | Extract<BibliographyDetectionResult, { outcome: 'below-threshold' }>
+    | undefined;
+
+  const givenIds = options.bibliographyBlockIds;
+  if (givenIds !== undefined) {
+    section = recoverySectionFromIds(bodyBlocks, givenIds);
+  } else {
+    const bibResult = detectBibliography(bodyBlocks);
+    if (bibResult.outcome === 'detected') section = bibResult.section;
+    else if (bibResult.outcome === 'below-threshold') belowThreshold = bibResult;
+  }
+
+  if (section !== undefined) {
+    doc.bibliography = section;
+    // S03 (T06): parse the section's blockIds span into §21 entries
     // (heading skipped unless it carries an entry; §88 failures isolated).
     const { entries, issues } = parseReferences(doc);
     doc.bibliography.entries = entries;
     if (issues.length > 0) doc.referenceParseIssues = issues;
-  } else if (bibResult.outcome === 'below-threshold') {
+  } else if (belowThreshold !== undefined) {
     // Ask-user path: no confident section, but candidates exist. blockIds and
     // heading stay undefined until the user picks a candidate (M003) — no
     // entries are parsed until a section is chosen.
     doc.bibliography = {
       outcome: 'below-threshold',
-      confidence: bibResult.confidence,
-      candidates: bibResult.candidates,
+      confidence: belowThreshold.confidence,
+      candidates: belowThreshold.candidates,
     };
   }
   // Stage 3/5 (PRD §61): §20 citation occurrence extraction (S03, T06).
@@ -219,6 +265,40 @@ export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): Ac
     doc.matchMap = buildMatchMap(doc);
   }
   return doc;
+}
+
+/**
+ * M003 recovery (PRD §63): build the bibliography section DIRECTLY from
+ * user-selected block ids (below-threshold candidates → pick). Semantics
+ * contract (MEM097): ordered section block ids, heading block first — the
+ * same shape as the detected-path `BibliographySection.blockIds`.
+ *
+ *   - a single id: the heading + the consecutive reference-like run via
+ *     {@link sectionBlockIdsFromHeading} (the same span rule as the detected
+ *     path — one deterministic implementation for both paths);
+ *   - multiple ids: used AS-IS (the caller already selected the exact span;
+ *     no reorder, no extension, no validation of later ids);
+ *   - an unresolvable first id (or an empty list): a deterministic EMPTY
+ *     section `{ outcome:'detected', heading:'', blockIds:[] }` — no crash,
+ *     no silent guess (R004); the caller cannot mistake it for a real span.
+ *
+ * Heading text is the first id's block text; `confidence` is intentionally
+ * absent — a user-directed section has no detector score (the human's choice
+ * replaces the threshold decision, D005/D009).
+ */
+function recoverySectionFromIds(blocks: DocumentBlock[], ids: string[]): BibliographySection {
+  const firstId = ids[0];
+  if (firstId === undefined) {
+    // Empty list -> no first id -> the same deterministic empty section.
+    return { outcome: 'detected', heading: '', blockIds: [] };
+  }
+  const headingBlock = blocks.find((b) => b.id === firstId);
+  if (headingBlock === undefined) {
+    return { outcome: 'detected', heading: '', blockIds: [] };
+  }
+  const blockIds =
+    ids.length === 1 ? sectionBlockIdsFromHeading(blocks, firstId) : [...ids];
+  return { outcome: 'detected', heading: headingBlock.text, blockIds };
 }
 
 /**

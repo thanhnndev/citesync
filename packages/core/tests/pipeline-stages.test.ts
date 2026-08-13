@@ -89,4 +89,27 @@ describe('onStage pipeline threading (PRD §61)', () => {
     expect(stages).toEqual([...PIPELINE_STAGES]);
     expect(stages.filter((s) => s === 'running-checks')).toHaveLength(1);
   });
+
+  it('forwards bibliographyBlockIds to the bytes parse; doc input ignores it (M003 recovery)', () => {
+    // ambiguous.docx is below-threshold by default (pick-a-section candidates);
+    // the recovery re-run passes the user-chosen heading id through.
+    const bytes = readFileSync(join(FIXTURES, 'bibliography/ambiguous.docx'));
+    const plain = lintDocument(bytes).doc.bibliography;
+    expect(plain?.outcome).toBe('below-threshold');
+
+    const recovered = lintDocument(bytes, { bibliographyBlockIds: ['doc-p3'] }).doc
+      .bibliography;
+    expect(recovered?.outcome).toBe('detected'); // user-directed, not thresholded
+    if (recovered?.outcome === 'detected') {
+      expect(recovered.heading).toBe('References');
+      expect(recovered.blockIds).toEqual(['doc-p3']);
+    }
+
+    // Doc input ignores the option (the parse never runs twice): re-linting
+    // the already-parsed doc keeps its below-threshold bibliography state.
+    const fromDoc = lintDocument(lintDocument(bytes).doc, {
+      bibliographyBlockIds: ['doc-p3'],
+    });
+    expect(fromDoc.doc.bibliography?.outcome).toBe('below-threshold');
+  });
 });

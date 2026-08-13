@@ -75,6 +75,19 @@ export interface LintDocumentOptions extends LintDocumentRulesOptions {
    * the resulting report.
    */
   onStage?: (stage: PipelineStage) => void;
+  /**
+   * M003 recovery (PRD §63 ask-user): ordered bibliography section block ids
+   * (heading block FIRST — the shape of `BibliographySection.blockIds`,
+   * MEM097) for the pick-a-section re-run. Forwarded to `parseDocument` and
+   * honored ONLY for bytes input: the recovery pass parses the same bytes
+   * with the user-chosen section instead of the detector's threshold
+   * decision. With a pre-parsed `AcademicDocument` input this option is
+   * IGNORED — the document already carries its bibliography state and the
+   * parse never runs twice (the re-run must start from the retained bytes,
+   * not from the old parsed doc). Additive only: absent/undefined keeps
+   * detection behavior byte-identical (R008).
+   */
+  bibliographyBlockIds?: string[];
 }
 
 /** The `lintDocument` result: typed issues + the parsed document + the rules that ran. */
@@ -278,12 +291,15 @@ export function lintDocument(
   input: LintDocumentInput,
   options: LintDocumentOptions = {},
 ): LintReport {
-  const { enabled, severityOverrides, customRules = [], onStage } = options;
+  const { enabled, severityOverrides, customRules = [], onStage, bibliographyBlockIds } = options;
 
   // Bytes input runs the parse stages (forwarded through onStage by
   // parseDocument); doc input has no parse stages — either way the parse
-  // never runs twice.
-  const doc = isDocument(input) ? input : parseDocument(input, { onStage });
+  // never runs twice. bibliographyBlockIds applies to the bytes parse only
+  // (M003 recovery re-run); with doc input it is ignored by design.
+  const doc = isDocument(input)
+    ? input
+    : parseDocument(input, { onStage, bibliographyBlockIds });
 
   validateCustomRules(customRules);
 

@@ -202,6 +202,39 @@ export function detectBibliography(
   };
 }
 
+/**
+ * Ordered section block ids for a user-selected bibliography heading (M003
+ * recovery path, PRD §63 ask-user). ONE deterministic span implementation
+ * shared by the detected path (`buildSection`) and the `bibliographyBlockIds`
+ * recovery path in buildModel — same shape, same rule: heading block first,
+ * then the consecutive run of reference-like BODY blocks in document order,
+ * breaking at the first non-reference-like body block (S03's entry-parsing
+ * scope, MEM097).
+ *
+ * @param blocks - the document's blocks (body + notes; notes are excluded —
+ *   a bibliography lives in the body, never in notes).
+ * @param headingBlockId - the id of the chosen heading block.
+ * @returns `[headingId, ...reference-like run]` in document order, or `[]`
+ *   when the heading id does not resolve to a body block — deterministic,
+ *   never a crash and never a silent guess (R004): the caller surfaces an
+ *   empty section.
+ */
+export function sectionBlockIdsFromHeading(
+  blocks: DocumentBlock[],
+  headingBlockId: string,
+): string[] {
+  const body = bodyBlocks(blocks);
+  const headingIndex = body.findIndex((b) => b.id === headingBlockId);
+  if (headingIndex === -1) return [];
+  const blockIds: string[] = [headingBlockId];
+  for (let i = headingIndex + 1; i < body.length; i += 1) {
+    const block = body[i];
+    if (block === undefined || !isReferenceLike(block)) break; // run ends at first non-entry
+    blockIds.push(block.id);
+  }
+  return blockIds;
+}
+
 /** Fraction of the next `REFERENCE_LIKE_LOOKAHEAD` body blocks that are reference-like. */
 function referenceLikeFractionAfter(body: DocumentBlock[], start: number): number {
   let hits = 0;
@@ -221,17 +254,11 @@ function referenceLikeFractionAfter(body: DocumentBlock[], start: number): numbe
  * yields `[headingBlockId]` (an empty section is still a section).
  */
 function buildSection(body: DocumentBlock[], best: ScoredCandidate): BibliographySection {
-  const blockIds: string[] = [best.block.id];
-  for (let i = best.bodyIndex + 1; i < body.length; i += 1) {
-    const block = body[i];
-    if (block === undefined || !isReferenceLike(block)) break; // run ends at first non-entry
-    blockIds.push(block.id);
-  }
   return {
     outcome: 'detected',
     heading: best.block.text,
     confidence: best.confidence,
-    blockIds,
+    blockIds: sectionBlockIdsFromHeading(body, best.block.id),
   };
 }
 
