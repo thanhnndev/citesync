@@ -1,52 +1,39 @@
 /**
- * T1 proof UI (raw — T5 replaces this with the real shell).
+ * T1 proof UI, now wired to the T3 typed protocol client (T5 replaces this
+ * with the real shell).
  *
- * Minimal flow: pick a .docx → File.arrayBuffer() → worker postMessage with
- * the bytes as a transferable (never re-read after transfer) → 'done' renders
- * the LintReport as JSON; 'error' renders the {name, message} envelope.
+ * Flow: pick a .docx → File.arrayBuffer() → runAnalysis (correlated request,
+ * bytes transferred) → stage messages render a live checklist (PRD §61) →
+ * done renders the canonical CLI-compatible report JSON (D024); error renders
+ * the {name, message} envelope mapped to friendly text (R016).
  */
 
 import { useState } from 'react';
-import type { LintReport } from '@citesync/core';
-
-/** T1 inline request shape (T3 introduces the shared typed protocol). */
-type AnalyzeRequest = {
-  id: number;
-  type: 'analyze';
-  bytes: ArrayBuffer;
-  fileName: string;
-};
-
-/** T1 inline response shape (T3 introduces the shared typed protocol). */
-type AnalyzeResponse =
-  | { id: number; type: 'done'; report: LintReport }
-  | { id: number; type: 'error'; name: string; message: string };
+import type { PipelineStage } from '@citesync/core';
+import { createLintWorker, runAnalysis } from './worker/client';
+import type { AnalyzeResult } from './worker/client';
+import { describeWorkerError } from './worker/protocol';
 
 export default function App() {
-  const [report, setReport] = useState<LintReport | null>(null);
+  const [stages, setStages] = useState<PipelineStage[]>([]);
+  const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [error, setError] = useState<{ name: string; message: string } | null>(null);
 
   async function analyzeFile(file: File) {
-    setReport(null);
+    setStages([]);
+    setResult(null);
     setError(null);
-    const worker = new Worker(new URL('./worker/lint.worker.ts', import.meta.url), {
-      type: 'module',
-    });
-    const bytes = await file.arrayBuffer();
-    worker.postMessage(
-      { id: 1, type: 'analyze', bytes, fileName: file.name } satisfies AnalyzeRequest,
-      // Transfer the buffer — it is never read again after this send.
-      [bytes],
-    );
-    worker.onmessage = (event: MessageEvent<AnalyzeResponse>) => {
-      const message = event.data;
-      if (message.type === 'done') {
-        setReport(message.report);
-      } else {
-        setError({ name: message.name, message: message.message });
-      }
-      worker.terminate();
-    };
+    try {
+      const worker = createLintWorker();
+      const bytes = await file.arrayBuffer();
+      // runAnalysis terminates the worker on the terminal envelope.
+      const analysis = await runAnalysis(worker, bytes, file.name, {
+        onStage: (stage) => setStages((prev) => [...prev, stage]),
+      });
+      setResult(analysis);
+    } catch (err) {
+      setError(err as { name: string; message: string });
+    }
   }
 
   return (
@@ -61,10 +48,19 @@ export default function App() {
           if (file) void analyzeFile(file);
         }}
       />
-      {report !== null && <pre data-testid="report-json">{JSON.stringify(report, null, 2)}</pre>}
+      {stages.length > 0 && (
+        <ol data-testid="stage-list">
+          {stages.map((stage) => (
+            <li key={stage}>{stage}</li>
+          ))}
+        </ol>
+      )}
+      {result !== null && (
+        <pre data-testid="report-json">{JSON.stringify(result.report, null, 2)}</pre>
+      )}
       {error !== null && (
         <div data-testid="error-panel">
-          <strong>{error.name}:</strong> {error.message}
+          <strong>{describeWorkerError(error.name)}</strong> ({error.name}) — {error.message}
         </div>
       )}
     </main>
