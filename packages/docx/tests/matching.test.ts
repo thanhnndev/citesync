@@ -165,6 +165,50 @@ describe('S04 matching — §79 false-positive guards', () => {
     ]);
   });
 
+  it('candidateEntryIds: exposes the tied candidate ids ONLY on AMBIGUOUS rows (M003-S02-T1)', () => {
+    // Flagship CS004: every citation ties the identical Smith, J. 2020 pair
+    // r0/r1 above the threshold — the ids must be present, in the
+    // deterministic at/above-threshold scan (document) order.
+    const ambiguous = parseDocument(
+      readFileSync(join(FIXTURES_DIR, 'match/ambiguous-same-author-year.docx')),
+    ).matchMap!;
+    for (const c of ambiguous.citations) {
+      expect(c.relationship, c.citationId).toBe('AMBIGUOUS');
+      expect(c.candidateEntryIds, c.citationId).toEqual(['r0', 'r1']);
+    }
+
+    // Non-AMBIGUOUS states never carry the field: MATCHED
+    // (same-author-two-years), POSSIBLE_MISMATCH + MATCHED
+    // (near-miss-author), and every MISSING_REFERENCE row on the
+    // absent-target fixtures — undefined everywhere.
+    const matched = parseDocument(
+      readFileSync(join(FIXTURES_DIR, 'match/same-author-two-years.docx')),
+    ).matchMap!;
+    for (const c of matched.citations) {
+      expect(c.relationship, c.citationId).toBe('MATCHED');
+      expect(c.candidateEntryIds, c.citationId).toBeUndefined();
+    }
+
+    const nearMiss = parseDocument(
+      readFileSync(join(FIXTURES_DIR, 'match/near-miss-author.docx')),
+    ).matchMap!;
+    for (const c of nearMiss.citations) {
+      expect(c.candidateEntryIds, c.citationId).toBeUndefined();
+    }
+
+    const absentTargets = Object.keys(KNOWN_MATCHES).filter(
+      (rel) => KNOWN_MATCHES[rel]!.citations.length > 0 && KNOWN_MATCHES[rel]!.entryStatus.length === 0,
+    );
+    expect(absentTargets.length).toBeGreaterThan(0);
+    for (const rel of absentTargets) {
+      const map = parseDocument(readFileSync(join(FIXTURES_DIR, rel))).matchMap!;
+      for (const c of map.citations) {
+        expect(c.relationship, `${rel} ${c.citationId}`).toBe('MISSING_REFERENCE');
+        expect(c.candidateEntryIds, `${rel} ${c.citationId}`).toBeUndefined();
+      }
+    }
+  });
+
   it('near-miss-author: "Smith, J." vs "Smith, P." → low-confidence POSSIBLE_MISMATCH, never MATCHED', () => {
     const map = parseDocument(readFileSync(join(FIXTURES_DIR, 'match/near-miss-author.docx'))).matchMap!;
     const byId = new Map(map.citations.map((c) => [c.citationId, c]));

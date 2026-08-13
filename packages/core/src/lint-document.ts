@@ -40,6 +40,7 @@ import {
 import type {
   LintDocumentRulesOptions,
   LintIssue,
+  PipelineStage,
   Rule,
   RuleContext,
   RuleSeverity,
@@ -64,6 +65,29 @@ export interface LintDocumentOptions extends LintDocumentRulesOptions {
    * segments only); per-rule `severityOverrides` apply to them too.
    */
   customRules?: readonly Rule[];
+  /**
+   * Progress callback (M003, PRD §61): invoked synchronously with each
+   * pipeline stage as the pass reaches it. For bytes input the four parse
+   * stages are forwarded from `parseDocument` ('reading-document' →
+   * 'detecting-bibliography' → 'finding-citations' → 'matching-references');
+   * then — for BOTH input kinds — 'running-checks' fires right before the
+   * rules pass. Purely observational (R008): the callback can never change
+   * the resulting report.
+   */
+  onStage?: (stage: PipelineStage) => void;
+  /**
+   * M003 recovery (PRD §63 ask-user): ordered bibliography section block ids
+   * (heading block FIRST — the shape of `BibliographySection.blockIds`,
+   * MEM097) for the pick-a-section re-run. Forwarded to `parseDocument` and
+   * honored ONLY for bytes input: the recovery pass parses the same bytes
+   * with the user-chosen section instead of the detector's threshold
+   * decision. With a pre-parsed `AcademicDocument` input this option is
+   * IGNORED — the document already carries its bibliography state and the
+   * parse never runs twice (the re-run must start from the retained bytes,
+   * not from the old parsed doc). Additive only: absent/undefined keeps
+   * detection behavior byte-identical (R008).
+   */
+  bibliographyBlockIds?: string[];
 }
 
 /** The `lintDocument` result: typed issues + the parsed document + the rules that ran. */
@@ -267,10 +291,22 @@ export function lintDocument(
   input: LintDocumentInput,
   options: LintDocumentOptions = {},
 ): LintReport {
-  const doc = isDocument(input) ? input : parseDocument(input);
-  const { enabled, severityOverrides, customRules = [] } = options;
+  const { enabled, severityOverrides, customRules = [], onStage, bibliographyBlockIds } = options;
+
+  // Bytes input runs the parse stages (forwarded through onStage by
+  // parseDocument); doc input has no parse stages — either way the parse
+  // never runs twice. bibliographyBlockIds applies to the bytes parse only
+  // (M003 recovery re-run); with doc input it is ignored by design.
+  const doc = isDocument(input)
+    ? input
+    : parseDocument(input, { onStage, bibliographyBlockIds });
 
   validateCustomRules(customRules);
+
+  // Stage 5/5 (PRD §61): the rules pass — the last pipeline stage. Emitted
+  // for BOTH input kinds (doc input has no parse stages, so this is its only
+  // stage). Observational only (R008).
+  onStage?.('running-checks');
 
   // Built-in pass CS001–CS009 (S02 aggregator: segment filter + overrides).
   const builtInIssues = lintDocumentRules(doc, { enabled, severityOverrides });

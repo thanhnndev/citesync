@@ -22,7 +22,11 @@
 import type { AcademicDocument } from '@citesync/document-model';
 
 import { buildModel } from './build-model.js';
+import type { BuildModelOptions } from './build-model.js';
 import { safeZipRead } from './zip/reader.js';
+
+/** Options for {@link parseDocument} — additive only, never changes the model. */
+export type ParseDocumentOptions = BuildModelOptions;
 
 /**
  * Parse a .docx buffer into the {@link AcademicDocument} model.
@@ -34,8 +38,11 @@ import { safeZipRead } from './zip/reader.js';
  * @throws NotADocxError | ZipBombError | UnsupportedFormatError for invalid
  *   or unsafe input — typed, never a raw crash.
  */
-export function parseDocument(buffer: Uint8Array | ArrayBuffer): AcademicDocument {
+export function parseDocument(
+  buffer: Uint8Array | ArrayBuffer,
+  options: ParseDocumentOptions = {},
+): AcademicDocument {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   const { parts } = safeZipRead(bytes);
-  return buildModel(parts);
+  return buildModel(parts, options);
 }

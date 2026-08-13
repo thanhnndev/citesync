@@ -5,4 +5,4 @@ import { defineWorkspace } from 'vitest/config';
 // that still resolves vitest.workspace.ts sees the same package projects.
 // If this ever double-runs tests next to test.projects, delete this file —
 // vitest.config.ts remains the single source of truth.
-export default defineWorkspace(['packages/*']);
+export default defineWorkspace(['packages/*', 'apps/*']);

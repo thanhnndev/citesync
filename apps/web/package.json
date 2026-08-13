@@ -1,0 +1,29 @@
+{
+  "name": "@citesync/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CiteSync offline PWA (M003): Vite 8 + React 19 app running @citesync/core lint inside a Web Worker — installable, offline-capable analysis UI",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@citesync/core": "0.1.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "vite": "8.2.1",
+    "vite-plugin-pwa": "^1.3.0"
+  },
+  "license": "UNLICENSED"
+}
