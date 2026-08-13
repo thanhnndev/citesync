@@ -289,6 +289,15 @@ function combineItems(
     tier: rep.tier,
     confidence: rep.confidence,
     reasons: rep.reasons,
+    // M003-S02-T1 (additive): expose the tied at/above-threshold candidate
+    // ids ONLY for an AMBIGUOUS resolution — the possible-references panel
+    // (S02) / R013 resolution picker (S03) consume these. `ambiguousEntries`
+    // is deduped preserve-first-seen in document order (deterministic). The
+    // items.length === 0 numeric-only path above returns before this point,
+    // and a non-empty set is structurally impossible for a non-AMBIGUOUS
+    // representative (AMBIGUOUS has the top SEVERITY), so the field is
+    // present iff relationship === 'AMBIGUOUS'.
+    ...(ambiguousEntries.length > 0 ? { candidateEntryIds: ambiguousEntries } : {}),
   };
   return { result, ambiguousEntries };
 }

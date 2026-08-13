@@ -559,6 +559,18 @@ export interface CitationMatchResult {
   confidence: number;
   /** Short evidence codes explaining the decision. */
   reasons: MatchReason[];
+  /**
+   * M003-S02-T1 (additive, D013 pattern — outside the frozen report schema
+   * v1, D020): ids of the tied at/above-threshold candidate entries of an
+   * AMBIGUOUS resolution. This is the possible-references surface (S02
+   * evidence panel) and the S03 (R013) resolution-picker input — matcher
+   * data, NEVER LLM-generated. Present ONLY when
+   * `relationship === 'AMBIGUOUS'`; the order is deterministic — the
+   * document-order scan order of the at/above-threshold candidates
+   * (deduped preserve-first-seen, matching the internal `ambiguousEntries`
+   * set). `undefined` for every other state.
+   */
+  candidateEntryIds?: string[];
 }
 
 /** §27 — one bibliography entry's usage status row. */
