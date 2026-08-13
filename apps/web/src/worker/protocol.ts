@@ -22,7 +22,7 @@
  * losslessly.
  *
  * WHY `error` is {name, message} and NOT a classified code: the
- * ErrorCode/classifyError family lives in @citesync/cli, and the worker must
+ * ErrorCode/classifyError family lives in the CLI package, and the worker must
  * never import the CLI (dependency direction, PRD §92/§93 — core cannot
  * import cli). The stable `name` discriminator is set by the
  * DocxReaderError subclasses themselves (packages/docx/src/zip/errors.ts,

@@ -29,7 +29,7 @@
  * useResolutions reducer delegates to, unit-tested directly.
  *
  * Consumes ONLY `@citesync/core` types (via indexed access — the
- * SessionResolution shape from ./resolutions) — no DOM, no `node:*`,
+ * SessionResolution shape from ./resolutions) — no DOM, no Node built-ins,
  * no worker/protocol imports (PRD §92/§93; resolution is client-side only).
  */
 

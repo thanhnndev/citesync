@@ -4,12 +4,12 @@
  * Everything the M003 explorer renders is derived deterministically from the
  * S01 done envelope ({ report, doc }) — this module is the pure-logic seam:
  * severity grouping, click-to-source span resolution, UTF-16 highlight
- * splitting and the possible-references join. Zero DOM, zero `node:*`, zero
- * I/O — every function is a pure function of its inputs (R008), unit-tested
- * in the node vitest environment.
+ * splitting and the possible-references join. Zero DOM, zero Node built-ins,
+ * zero I/O — every function is a pure function of its inputs (R008),
+ * unit-tested in the node vitest environment.
  *
- * CONSUMES ONLY `@citesync/core` (PRD §92/§93 — apps/web never imports
- * `@citesync/docx` / `@citesync/cli` / `@citesync/document-model` directly).
+ * CONSUMES ONLY `@citesync/core` (PRD §92/§93 — apps/web never imports the
+ * Node-only analysis packages directly).
  * The model types below are DERIVED from the single `AcademicDocument` type
  * core re-exports, so no document-model import is needed here.
  *

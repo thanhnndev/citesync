@@ -1,11 +1,10 @@
 /**
  * R013 (S03-T1) — pure manual-resolution view model (PRD §92/§93).
  *
- * Zero DOM, zero `node:*`, zero I/O — every function is a pure function of
- * its inputs (R008). Consumes ONLY `@citesync/core` types (via indexed
- * access + the explorer helpers in ../explorer/explorer.ts) — apps/web never
- * imports `@citesync/docx` / `@citesync/cli` / `@citesync/document-model`
- * directly.
+ * Zero DOM, zero Node built-ins, zero I/O — every function is a pure
+ * function of its inputs (R008). Consumes ONLY `@citesync/core` types (via
+ * indexed access + the explorer helpers in ../explorer/explorer.ts) —
+ * apps/web never imports the Node-only analysis packages directly.
  *
  * The user's manual resolution of an AMBIGUOUS citation is a VIEW overlay:
  * it never mutates the canonical report (D020/D024 — the frozen CliReport is
