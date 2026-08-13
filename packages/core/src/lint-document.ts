@@ -40,6 +40,7 @@ import {
 import type {
   LintDocumentRulesOptions,
   LintIssue,
+  PipelineStage,
   Rule,
   RuleContext,
   RuleSeverity,
@@ -64,6 +65,16 @@ export interface LintDocumentOptions extends LintDocumentRulesOptions {
    * segments only); per-rule `severityOverrides` apply to them too.
    */
   customRules?: readonly Rule[];
+  /**
+   * Progress callback (M003, PRD §61): invoked synchronously with each
+   * pipeline stage as the pass reaches it. For bytes input the four parse
+   * stages are forwarded from `parseDocument` ('reading-document' →
+   * 'detecting-bibliography' → 'finding-citations' → 'matching-references');
+   * then — for BOTH input kinds — 'running-checks' fires right before the
+   * rules pass. Purely observational (R008): the callback can never change
+   * the resulting report.
+   */
+  onStage?: (stage: PipelineStage) => void;
 }
 
 /** The `lintDocument` result: typed issues + the parsed document + the rules that ran. */
@@ -267,10 +278,19 @@ export function lintDocument(
   input: LintDocumentInput,
   options: LintDocumentOptions = {},
 ): LintReport {
-  const doc = isDocument(input) ? input : parseDocument(input);
-  const { enabled, severityOverrides, customRules = [] } = options;
+  const { enabled, severityOverrides, customRules = [], onStage } = options;
+
+  // Bytes input runs the parse stages (forwarded through onStage by
+  // parseDocument); doc input has no parse stages — either way the parse
+  // never runs twice.
+  const doc = isDocument(input) ? input : parseDocument(input, { onStage });
 
   validateCustomRules(customRules);
+
+  // Stage 5/5 (PRD §61): the rules pass — the last pipeline stage. Emitted
+  // for BOTH input kinds (doc input has no parse stages, so this is its only
+  // stage). Observational only (R008).
+  onStage?.('running-checks');
 
   // Built-in pass CS001–CS009 (S02 aggregator: segment filter + overrides).
   const builtInIssues = lintDocumentRules(doc, { enabled, severityOverrides });

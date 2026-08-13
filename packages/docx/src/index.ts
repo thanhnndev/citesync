@@ -241,3 +241,10 @@ export type {
   SourceLocation,
   SourceMap,
 } from '@citesync/document-model';
+
+// M003 (T2): the frozen pipeline-stage contract (PRD §61) — the five stages
+// a lintDocument pass emits, shared by the core onStage threading (T2) and
+// the worker/UI progress checklist (T3–T5). Stage names are the internal
+// contract (D025); they never enter the frozen report schema (D020/D024).
+export { PIPELINE_STAGES } from './pipeline-stages.js';
+export type { PipelineStage } from './pipeline-stages.js';

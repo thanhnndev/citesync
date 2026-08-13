@@ -53,6 +53,7 @@ import { attrVal, readOpenTag, scanTagEnd, tagName } from './xml/tag-scan.js';
 import { NotADocxError, ZipBombError } from './zip/errors.js';
 import { XML_STRING_MAX } from './zip/limits.js';
 import type { ZipParts } from './zip/reader.js';
+import type { PipelineStage } from './pipeline-stages.js';
 import { extractCoreProperties } from './metadata.js';
 import { parseBody } from './parser/document.js';
 import { noteToBlock, scanNotePart } from './parser/footnotes.js';
@@ -73,12 +74,31 @@ const PART_RELS = 'word/_rels/document.xml.rels';
 const MACRO_PART_RE = /(^|\/)(vba|macro)|\.bin$/i;
 
 /**
+ * Options for {@link buildModel}. Additive only — never changes the model.
+ */
+export interface BuildModelOptions {
+  /**
+   * Progress callback (M003, PRD §61): invoked synchronously with each
+   * parse-model stage as the pipeline reaches it, in canonical order
+   * ('reading-document' → 'detecting-bibliography' → 'finding-citations'
+   * → 'matching-references'; 'running-checks' is emitted by the core
+   * lintDocument rules pass, not here). Purely observational (R008): a
+   * callback can never alter the assembled model.
+   */
+  onStage?: (stage: PipelineStage) => void;
+}
+
+/**
  * Assemble a bounded parts map into an {@link AcademicDocument}.
  *
+ * @param parts - the bounded parts map from the reader.
+ * @param options - optional {@link BuildModelOptions} (onStage progress
+ *   callback — observational, deterministic).
  * @throws {@link ZipBombError} if any decoded part exceeds XML_STRING_MAX.
  *   Structurally invalid archives are already rejected by the reader.
  */
-export function buildModel(parts: ZipParts): AcademicDocument {
+export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): AcademicDocument {
+  const { onStage } = options;
   // Decode the parts we read, enforcing the XML string cap per part.
   const documentXml = decodePart(parts, PART_DOCUMENT);
   if (documentXml === undefined) {
@@ -92,6 +112,10 @@ export function buildModel(parts: ZipParts): AcademicDocument {
   const coreXml = decodePart(parts, PART_CORE);
 
   const styles = stylesXml === undefined ? undefined : loadStyleMap(stylesXml);
+
+  // Stage 1/5 (PRD §61): reading the document body. Emitted right before
+  // the body parse — the first stage a lintDocument pass reports.
+  onStage?.('reading-document');
 
   // Body blocks (paragraphs + tables) in document order, with source-map runs.
   const body = parseBody(documentXml, { part: 'doc', styles });
@@ -132,6 +156,9 @@ export function buildModel(parts: ZipParts): AcademicDocument {
   // model-first-class (R004 / PRD §17 — the engine never silently guesses a
   // section); `none` leaves it undefined (absent bibliography). detectBibliography
   // is pure, so this preserves buildModel determinism (R008).
+
+  // Stage 2/5 (PRD §61): bibliography detection (S02, D009).
+  onStage?.('detecting-bibliography');
   const bibResult = detectBibliography(body.entries.map((e) => e.block));
 
   const doc: AcademicDocument = {
@@ -157,6 +184,8 @@ export function buildModel(parts: ZipParts): AcademicDocument {
       candidates: bibResult.candidates,
     };
   }
+  // Stage 3/5 (PRD §61): §20 citation occurrence extraction (S03, T06).
+  onStage?.('finding-citations');
   // S03 (T06): fill §20 citation occurrences — plain-text detection (T03) over
   // every block (body + footnotes + endnotes) with structured-field identity
   // (T04, Zotero/Word) overlaid. Pure + deterministic (R008); the citation pass
@@ -175,6 +204,8 @@ export function buildModel(parts: ZipParts): AcademicDocument {
   }
   if (parseIssues.length > 0) doc.parseIssues = parseIssues;
   if (security !== undefined) doc.security = security;
+  // Stage 4/5 (PRD §61): §27 citation×reference matching (S04).
+  onStage?.('matching-references');
   // S04 (T2): fill the §27 match-state map LAST — after `citations` and
   // `bibliography.entries` are both populated by the extraction tail above.
   // The map is meaningful only when there is something to match: at least one

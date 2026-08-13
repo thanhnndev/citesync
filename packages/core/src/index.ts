@@ -46,3 +46,27 @@ export type {
   RuleSegment,
   SeverityInput,
 } from '@citesync/docx';
+
+// M003 (T2): the canonical CLI-compatible report builder (R014, D024) — pure
+// and browser-safe (zero Node builtins), so the CLI delegates here (buildReport →
+// buildCliReport) and the M003 worker/export UI consume the SAME builder from
+// core. CLI JSON and app JSON can never drift.
+export { buildCliReport, countIssues, emptyCounts, REPORT_VERSION } from './cli-report.js';
+export type {
+  BuildCliReportOptions,
+  CliReport,
+  CliReportMeta,
+  SeverityCounts,
+} from './cli-report.js';
+
+// The frozen pipeline-stage contract (PRD §61): the worker forwards each
+// stage via postMessage and the UI renders the §61 checklist. Stage names are
+// internal contract (D025) — they never enter the frozen report schema. The
+// VALUE is re-exported too so the worker/UI take the stage list from the
+// public core package (PRD §93), never from @citesync/docx.
+export { PIPELINE_STAGES } from '@citesync/docx';
+export type { PipelineStage } from '@citesync/docx';
+
+// The §15 model type, re-exported so the worker/UI take AcademicDocument from
+// the public core package (PRD §93), never from @citesync/docx.
+export type { AcademicDocument } from '@citesync/document-model';

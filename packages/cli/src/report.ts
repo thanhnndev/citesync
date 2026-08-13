@@ -1,11 +1,12 @@
 /**
  * @citesync/cli — the canonical CLI-compatible JSON report (R010/R014).
  *
- * This module is the SINGLE SOURCE OF TRUTH for everything the CLI renders:
- * the default severity-summary table and the detailed per-issue list are pure
- * renderers over THIS shape, and `--json` emits exactly this document. M003's
- * export UI (R014) reuses the same schema, so the CLI and the app can never
- * drift.
+ * The success-report shape is now built by `@citesync/core`'s pure
+ * `buildCliReport` (D024 — single source of truth shared with the M003
+ * worker and export UI, browser-safe): `buildReport` delegates here, so
+ * CLI JSON and app JSON can never drift. This module keeps the CLI-owned
+ * pieces: the `SEVERITY_ORDER` re-derivation, the failure classification
+ * (`ErrorCode`, `CliErrorInfo`, `buildErrorReport`) and `serializeReport`.
  *
  * Shape (deterministic; frozen for M003 — T2 adds the contract tests):
  *
@@ -28,14 +29,21 @@
  * already carry `evidence[]` with `source` locations (R009 source evidence),
  * so the JSON needs no enrichment and stays identical to what S03
  * `lintDocument` produces.
+ *
+ * NOTE (D025): pipeline stage names (PRD §61) are an internal progress
+ * contract — never serialized here.
  */
 
-import type { LintIssue, LintReport, RuleSeverity } from '@citesync/core';
-import { RULE_SEVERITIES } from '@citesync/core';
+import type { CliReport, LintReport, RuleSeverity } from '@citesync/core';
+import { RULE_SEVERITIES, buildCliReport, emptyCounts, REPORT_VERSION } from '@citesync/core';
 import { basename } from 'node:path';
 
-/** Bump when the schema shape changes (M003 export contract). */
-export const REPORT_VERSION = 1 as const;
+// The canonical success-report contract now lives in @citesync/core (D024) —
+// re-exported so json-schema.ts `satisfies` binds, render.ts and the
+// cli-contract/cli-determinism tests keep resolving. Failure classification
+// (ErrorCode/CliErrorInfo) stays CLI-owned below.
+export { REPORT_VERSION, countIssues, emptyCounts } from '@citesync/core';
+export type { CliReport, CliReportMeta, SeverityCounts } from '@citesync/core';
 
 /** Fixed, deterministic order of the severity-count keys (R008). */
 export const SEVERITY_ORDER: readonly RuleSeverity[] = RULE_SEVERITIES;
@@ -51,21 +59,6 @@ export type ErrorCode =
   /** Bad flags / missing file argument — exit 2 (usage). */
   | 'usage';
 
-/** Per-severity issue counts. Keys in SEVERITY_ORDER, always all four. */
-export type SeverityCounts = Record<RuleSeverity, number>;
-
-/** The canonical report `meta` block. */
-export interface CliReportMeta {
-  /** Basename of the analyzed file (display-friendly, machine-independent). */
-  file: string;
-  /** §20 citation occurrences counted on the parsed document. */
-  citations: number;
-  /** §21 bibliography entries (fallback: detected section blockIds count). */
-  references: number;
-  /** Rules that ran this pass, sorted — inspectable for debugging (R009). */
-  ruleIds: string[];
-}
-
 /** Failure detail carried in the JSON when a run does not produce a report. */
 export interface CliErrorInfo {
   /** Machine-readable code (stable contract, mirrors exit codes 2/3). */
@@ -75,55 +68,18 @@ export interface CliErrorInfo {
 }
 
 /**
- * The canonical CLI-compatible report. `error` is present ONLY on failure;
- * success reports omit the key entirely (byte-stable success shape).
- */
-export interface CliReport {
-  /** Schema version (see REPORT_VERSION). */
-  version: number;
-  /** File + document-level counters. */
-  meta: CliReportMeta;
-  /** Frozen S02 LintIssue[] — deterministic severity → source → ruleId order. */
-  issues: LintIssue[];
-  /** Per-severity counts (all four keys, SEVERITY_ORDER). */
-  counts: SeverityCounts;
-  /** Present only when the run failed (parse-failure / unsupported / file-not-found). */
-  error?: CliErrorInfo;
-}
-
-/** All-zero severity counts — deterministic key order. */
-export function emptyCounts(): SeverityCounts {
-  return Object.fromEntries(SEVERITY_ORDER.map((sev) => [sev, 0])) as SeverityCounts;
-}
-
-/** Count the issues per severity (all four keys always present). */
-export function countIssues(issues: readonly LintIssue[]): SeverityCounts {
-  const counts = emptyCounts();
-  for (const issue of issues) {
-    counts[issue.severity] += 1;
-  }
-  return counts;
-}
-
-/**
- * Build the canonical report from an @citesync/core LintReport.
+ * Build the canonical report from an @citesync/core LintReport — delegates
+ * to the shared `buildCliReport` (D024), so the CLI and the M003
+ * worker/export UI serialize the SAME bytes for the same input.
  *
  * @param lint — the typed report from `lintDocument` (issues + doc + ruleIds).
  * @param file — the analyzed file path (only the basename is recorded).
  */
 export function buildReport(lint: LintReport, file: string): CliReport {
-  const bib = lint.doc.bibliography;
-  return {
+  return buildCliReport(lint.doc, lint.issues, lint.ruleIds, {
+    fileName: basename(file),
     version: REPORT_VERSION,
-    meta: {
-      file: basename(file),
-      citations: lint.doc.citations.length,
-      references: bib?.entries?.length ?? bib?.blockIds?.length ?? 0,
-      ruleIds: [...lint.ruleIds],
-    },
-    issues: lint.issues,
-    counts: countIssues(lint.issues),
-  };
+  });
 }
 
 /**
