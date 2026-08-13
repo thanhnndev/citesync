@@ -226,6 +226,367 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* Explorer layout (R012)                                              */
+/* ------------------------------------------------------------------ */
+
+.explorer-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 700px) {
+  .explorer-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.doc-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Issue explorer (severity groups)                                    */
+/* ------------------------------------------------------------------ */
+
+.issue-explorer,
+.doc-view,
+.evidence-panel,
+.recovery-panel {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.issue-explorer h2,
+.doc-view h2,
+.evidence-panel h2,
+.recovery-panel h2 {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+}
+
+.issue-explorer-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.severity-group + .severity-group {
+  margin-top: 16px;
+}
+
+.severity-group-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.severity-group-count {
+  font-weight: 700;
+}
+
+.severity-group.severity-error .severity-group-name,
+.severity-group.severity-error .severity-group-count {
+  color: var(--color-error);
+}
+
+.severity-group.severity-warning .severity-group-name,
+.severity-group.severity-warning .severity-group-count {
+  color: var(--color-warning);
+}
+
+.severity-group.severity-ambiguous .severity-group-name,
+.severity-group.severity-ambiguous .severity-group-count {
+  color: var(--color-ambiguous);
+}
+
+.severity-group.severity-info .severity-group-name,
+.severity-group.severity-info .severity-group-count {
+  color: var(--color-info);
+}
+
+.issue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.issue-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #f6f8fa;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.issue-row:hover {
+  border-color: var(--color-accent);
+  background: #eef4ff;
+}
+
+.issue-row.issue-row-selected {
+  border-color: var(--color-accent);
+  background: #eef4ff;
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.issue-row-id {
+  flex-shrink: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.issue-row-message {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* ------------------------------------------------------------------ */
+/* Document view (click-to-source, R009)                               */
+/* ------------------------------------------------------------------ */
+
+.doc-view-scroll {
+  max-height: 460px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 4px 12px;
+  background: #fbfcfd;
+}
+
+.doc-block {
+  margin: 0;
+  padding: 10px 4px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  border-bottom: 1px solid #eef1f4;
+}
+
+.doc-block:last-child {
+  border-bottom: none;
+}
+
+.doc-block.doc-block-highlighted {
+  background: #fffdf0;
+  border-radius: 4px;
+}
+
+/* Severity-tinted highlight mark (colors from the :root vars) */
+mark.source-highlight {
+  padding: 0 2px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+mark.source-highlight.source-highlight-error {
+  background: #ffebe9;
+  color: var(--color-error);
+}
+
+mark.source-highlight.source-highlight-warning {
+  background: #fff8c5;
+  color: var(--color-warning);
+}
+
+mark.source-highlight.source-highlight-ambiguous {
+  background: #fff1e5;
+  color: var(--color-ambiguous);
+}
+
+mark.source-highlight.source-highlight-info {
+  background: #eaeef2;
+  color: var(--color-info);
+}
+
+.doc-view-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Evidence panel (R012)                                               */
+/* ------------------------------------------------------------------ */
+
+.evidence-issue {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+}
+
+.evidence-issue-id {
+  flex-shrink: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.evidence-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.evidence-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #f6f8fa;
+}
+
+.evidence-code {
+  grid-column: 1 / -1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  color: var(--color-accent);
+}
+
+.evidence-message {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.evidence-source {
+  grid-column: 1 / -1;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.evidence-references-heading {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
+
+.reference-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reference-entry {
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  border-left: 3px solid var(--color-border);
+}
+
+.evidence-empty-refs {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Bibliography recovery panel (PRD §63 ask-user)                      */
+/* ------------------------------------------------------------------ */
+
+.recovery-explanation {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.recovery-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.recovery-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recovery-candidate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: #f6f8fa;
+}
+
+.recovery-candidate-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recovery-heading {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.recovery-type {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.recovery-confidence {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--color-muted);
+}
+
+.recovery-use {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.recovery-use:hover {
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
 /* Error panel (R016)                                                  */
 /* ------------------------------------------------------------------ */
 
