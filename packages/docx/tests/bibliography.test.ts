@@ -296,9 +296,13 @@ describe('bibliography detection — weighted scorer unit tests (synthetic block
     if (at.outcome === 'detected') {
       expect(at.section.confidence).toBe(BIBLIOGRAPHY_THRESHOLD); // 0.6 exact
       expect(at.section.heading).toBe('References');
-      // The following entries are not a consecutive run (p1/p2 are narrative),
-      // so the span is the heading alone.
-      expect(at.section.blockIds).toEqual(['p0']);
+      // Year-less lines in the LEADING gap (p1/p2 carry no '(YYYY)' in-text
+      // citation) join the span as candidate entries once the entry at p3
+      // resolves the gap (M004-S02 year-less-entry contract) — the span is
+      // the heading + the gap + the run, not the heading alone. Only lines
+      // with in-text citations '(YYYY)' (real prose, apa-like.docx) still
+      // terminate the span.
+      expect(at.section.blockIds).toEqual(['p0', 'p1', 'p2', 'p3']);
     }
 
     // 0.7: exact + style + position -> detected.

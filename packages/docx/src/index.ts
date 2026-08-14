@@ -26,6 +26,7 @@ export {
   ZipBombError,
   UnsupportedFormatError,
   ParseFailureError,
+  TimeBudgetExceededError,
 } from './zip/errors.js';
 
 // Bounds-guarded decompression of an untrusted .docx.

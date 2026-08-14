@@ -94,6 +94,19 @@ const KNOWN_CITATIONS: Record<string, string[]> = {
   'numeric/multiple-brackets.docx': ['[1][2,3]', '[4]', 'Doe, J. (2017).', 'Roe, M. (2018).', 'Lee, K. (2019).', 'Tran, B. (2020).'],
   'numeric/out-of-range.docx': ['[1]', '[5]', '[0]', 'Doe, J. (2017).', 'Roe, M. (2018).', 'Lee, K. (2019).'],
   'numeric/malformed.docx': ['[3]', '[1, x]', 'Doe, J. (2017).', 'Roe, M. (2018).', 'Lee, K. (2019).'],
+  // M004-S01 (T1): deterministic 100-page load artifact — the KNOWN_CITATIONS
+  // strings are authored verbatim in Chapter 1's first body paragraph.
+  'perf/100-page.docx': ['Smith (2020)', '(Nguyen & Tran, 2021)'],
+  // M004-S02 (T4): failure-isolation fixture — year-less garbage entry,
+  // clean [1] → r0 resolved (MEM159), malformed [1, x] never a citation
+  // (D044). Entry follows the numeric/malformed.docx pattern: clean raws +
+  // the malformed bracket string all round-trip verbatim (R009).
+  'isolation/garbage-and-malformed.docx': ['[1]', '[1, x]', 'Doe, J. (2017).', 'Roe, M. (2018).'],
+  // M004-S03 (T4): generated R017 quality fixture — the anchors ('Smith
+  // (2020)' narrative + '(Nguyen, 2021)' parenthetical) are authored verbatim
+  // in body paragraph 1; entries are single-author (deviation from research:
+  // multi-author tails have no corpus precedent).
+  'quality/medium.docx': ['Smith (2020)', '(Nguyen, 2021)'],
   'security/vba-sample.docx': [], // macro carriage text only — no citations
 };
 
@@ -108,9 +121,11 @@ describe('fixture corpus — real .docx files parse end to end', () => {
   it('covers the full committed fixture corpus (manifest drift guard)', () => {
     // Lock the fixture inventory: README.md + minimal(1) + author-date(7) +
     // documents(3) + bibliography(5) + match(4, S04-T1/T2) + numeric(5,
-    // M002-S01 D016) + security(6 incl. not-a-docx.zip + lying-bomb) = 32 files.
-    expect(ALL_FILES).toHaveLength(32);
-    expect(VALID_FIXTURES).toHaveLength(26);
+    // M002-S01 D016) + perf(1, M004-S01 load artifact) + isolation(1,
+    // M004-S02 T4) + quality(1, M004-S03) + security(6 incl. not-a-docx.zip
+    // + lying-bomb) = 35 files.
+    expect(ALL_FILES).toHaveLength(35);
+    expect(VALID_FIXTURES).toHaveLength(29);
     expect(BAD_SAMPLES).toHaveLength(5);
   });
 

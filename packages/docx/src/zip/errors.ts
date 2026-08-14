@@ -86,3 +86,22 @@ export class ParseFailureError extends DocxReaderError {
     this.name = 'ParseFailureError';
   }
 }
+
+/**
+ * The whole-analysis pass exceeded its processing time budget (R016 residual,
+ * D039/MEM147).
+ *
+ * A pathological input that would otherwise consume unbounded analysis time is
+ * aborted at a coarse pipeline checkpoint — a whole-pass safety valve, distinct
+ * from the reader's {@link ../limits.PROCESSING_TIME_BUDGET_MS} which bounds
+ * only the zip-inflate stage. Distinct from ZipBombError: the input is not
+ * necessarily hostile — it may simply be extreme in analysis cost. A caller
+ * that catches this can abort with "analysis timed out" rather than hanging.
+ */
+export class TimeBudgetExceededError extends DocxReaderError {
+  constructor(detail?: string) {
+    super('Analysis exceeded the processing time budget', detail);
+    // Stable name — must survive production minification (see NotADocxError).
+    this.name = 'TimeBudgetExceededError';
+  }
+}

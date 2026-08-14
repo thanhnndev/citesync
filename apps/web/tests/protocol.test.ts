@@ -152,9 +152,15 @@ describe('type guards', () => {
 // ---------------------------------------------------------------------------
 
 describe('classifyWorkerError', () => {
-  it.each(['NotADocxError', 'ZipBombError', 'ParseFailureError', 'UnsupportedFormatError'])(
-    'preserves the stable name for %s',
-    (name) => {
+  it.each([
+    'NotADocxError',
+    'ZipBombError',
+    'ParseFailureError',
+    'UnsupportedFormatError',
+    // T3 (R016 residual, D039): the whole-analysis time-budget abort joins
+    // the D021/D029 known-name family — preserved verbatim like its siblings.
+    'TimeBudgetExceededError',
+  ])('preserves the stable name for %s', (name) => {
       const err = Object.assign(new Error('boom'), { name });
       expect(classifyWorkerError(err)).toEqual({ name, message: 'boom' });
     },
@@ -196,6 +202,9 @@ describe('describeWorkerError', () => {
     expect(describeWorkerError('ZipBombError')).toContain('size limits');
     expect(describeWorkerError('ParseFailureError')).toContain('could not be parsed');
     expect(describeWorkerError('UnsupportedFormatError')).toContain('unsupported format');
+    // T3 (R016 residual, D039): a pathological upload aborts with friendly
+    // text instead of a spinner hang — the UI maps the new name too.
+    expect(describeWorkerError('TimeBudgetExceededError')).toContain('took too long');
   });
 
   it('falls back to "Unexpected error: <name>" for unknown names', () => {

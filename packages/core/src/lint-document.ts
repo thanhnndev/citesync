@@ -20,6 +20,13 @@
  *      with the built-in issues into ONE deterministic severity → source →
  *      ruleId order. The matcher, built-in registry and built-in rules are
  *      never touched (slice demo contract).
+ *   4. Whole-analysis time budget (T2, R016 residual): ONE shared deadline
+ *      read once at entry and enforced ONLY at coarse checkpoints (the four
+ *      parse-stage boundaries inside buildModel + three lint checkpoints
+ *      here). A pathological input aborts with a typed
+ *      TimeBudgetExceededError instead of hanging; the generous default
+ *      (30 s, far above the 3 s perf target) keeps in-budget inputs
+ *      byte-identical (R008).
  *
  * VALIDATION: custom rules fail fast with a `TypeError` naming the offending
  * id/field (shape errors, id collisions with built-ins or between custom
@@ -34,6 +41,7 @@ import {
   RULE_BY_ID,
   RULE_SEGMENTS,
   RULE_SEVERITIES,
+  TimeBudgetExceededError,
   lintDocumentRules,
   parseDocument,
 } from '@citesync/docx';
@@ -88,6 +96,17 @@ export interface LintDocumentOptions extends LintDocumentRulesOptions {
    * detection behavior byte-identical (R008).
    */
   bibliographyBlockIds?: string[];
+  /**
+   * Whole-analysis processing time budget (R016 residual, D039/MEM147):
+   * milliseconds allowed for the ENTIRE lint pass (parse + rules) before it
+   * aborts with a typed {@link TimeBudgetExceededError}. A SAFETY VALVE
+   * ONLY — enforced at coarse pipeline checkpoints, never inside hot loops.
+   * Generous default 30_000 ms (DEFAULT_TIME_BUDGET_MS), far above the 3 s
+   * perf target, so the ~240 ms S01-optimized runs never trip. Additive
+   * (D025/D026 seam): absent behaves identically to the default; in-budget
+   * inputs are byte-identical (R008).
+   */
+  timeBudgetMs?: number;
 }
 
 /** The `lintDocument` result: typed issues + the parsed document + the rules that ran. */
@@ -99,6 +118,11 @@ export interface LintReport {
   /** Rule ids that ran this pass (built-ins after segment filtering + custom rules), sorted. Inspectable for contributors/debugging (R009). */
   ruleIds: readonly string[];
 }
+
+/** Default whole-analysis time budget (T2, R016 residual): a generous 30 s
+ * safety valve far above the 3 s perf target — ordinary runs never trip it.
+ * Enforced only at coarse checkpoints; in-budget inputs byte-identical. */
+const DEFAULT_TIME_BUDGET_MS = 30_000;
 
 // ---------------------------------------------------------------------------
 // Input discrimination.
@@ -122,6 +146,19 @@ function contextFromDoc(doc: AcademicDocument): RuleContext {
     bibliography: doc.bibliography,
     citations: doc.citations,
   };
+}
+
+/**
+ * Coarse lint-level safety-valve checkpoint (T2, R016 residual): throws
+ * {@link TimeBudgetExceededError} once `performance.now()` passes the
+ * whole-pass deadline. The budget is always present here (default 30 s), so
+ * unlike buildModel's optional helper this one takes the non-undefined
+ * budget; still enforced only at coarse checkpoints, never in loops.
+ */
+function checkLintBudget(budget: { deadline: number }, label: string): void {
+  if (performance.now() > budget.deadline) {
+    throw new TimeBudgetExceededError(`processing time budget exceeded at ${label}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -285,13 +322,29 @@ function activeBuiltInRuleIds(enabled: readonly RuleSegment[] | undefined): stri
  *   severity → source → ruleId order (R008), the parsed document, and the
  *   inspectable list of rules that ran.
  * @throws TypeError on malformed/colliding custom rules (fail-fast
- *   contributor errors); DocxReaderError family on unparseable bytes.
+ *   contributor errors); DocxReaderError family on unparseable bytes;
+ *   TimeBudgetExceededError when the whole-analysis pass exceeds its
+ *   processing time budget (safety valve, coarse checkpoints).
  */
 export function lintDocument(
   input: LintDocumentInput,
   options: LintDocumentOptions = {},
 ): LintReport {
-  const { enabled, severityOverrides, customRules = [], onStage, bibliographyBlockIds } = options;
+  const {
+    enabled,
+    severityOverrides,
+    customRules = [],
+    onStage,
+    bibliographyBlockIds,
+    timeBudgetMs,
+  } = options;
+
+  // Whole-analysis safety valve (T2, R016 residual): ONE shared deadline read
+  // once at entry, enforced only at coarse checkpoints (inside buildModel at
+  // the four parse-stage boundaries + the three lint checkpoints below). The
+  // generous default (30 s, far above the 3 s perf target) keeps in-budget
+  // inputs byte-identical (R008) — the clock is never part of the output.
+  const budget = { deadline: performance.now() + (timeBudgetMs ?? DEFAULT_TIME_BUDGET_MS) };
 
   // Bytes input runs the parse stages (forwarded through onStage by
   // parseDocument); doc input has no parse stages — either way the parse
@@ -299,7 +352,7 @@ export function lintDocument(
   // (M003 recovery re-run); with doc input it is ignored by design.
   const doc = isDocument(input)
     ? input
-    : parseDocument(input, { onStage, bibliographyBlockIds });
+    : parseDocument(input, { onStage, bibliographyBlockIds, timeBudget: budget });
 
   validateCustomRules(customRules);
 
@@ -309,9 +362,11 @@ export function lintDocument(
   onStage?.('running-checks');
 
   // Built-in pass CS001–CS009 (S02 aggregator: segment filter + overrides).
+  checkLintBudget(budget, 'lint rules pass');
   const builtInIssues = lintDocumentRules(doc, { enabled, severityOverrides });
 
   // Contributor custom rules over the same frozen context, merged below.
+  checkLintBudget(budget, 'between built-in and custom rule passes');
   const customIssues =
     customRules.length === 0
       ? []
@@ -320,6 +375,9 @@ export function lintDocument(
           contextFromDoc(doc),
           customOverrideMap(severityOverrides, customRules),
         );
+
+  // After the custom pass — every analysis step behind us aborts here.
+  checkLintBudget(budget, 'after custom rules pass');
 
   const issues = [...builtInIssues, ...customIssues];
   const blockOrder = new Map(doc.blocks.map((block, index) => [block.id, index]));

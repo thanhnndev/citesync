@@ -61,7 +61,10 @@ import type {
   ReferenceEntry,
 } from '@citesync/document-model';
 
-import { scoreCitationAgainstEntry } from './score.js';
+import {
+  deriveCitationKeys,
+  scoreCitationAgainstEntryDerived,
+} from './score.js';
 import type { CitationScore } from './score.js';
 import {
   MATCH_WEIGHTS,
@@ -167,8 +170,13 @@ function matchItem(
     // No bibliography targets at all — no silent guess (§79/R004).
     return missingEntryResult();
   }
+  const derived = deriveCitationKeys(item);
   const candidates: ScoredCandidate[] = entries
-    .map((entry, index) => ({ entry, index, score: scoreCitationAgainstEntry(item, entry, weights) }))
+    .map((entry, index) => ({
+      entry,
+      index,
+      score: scoreCitationAgainstEntryDerived(item, derived, entry, weights),
+    }))
     .sort((a, b) => b.score.score - a.score.score || a.index - b.index);
 
   const top = candidates[0]!;

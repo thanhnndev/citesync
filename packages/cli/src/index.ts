@@ -75,6 +75,15 @@ export function classifyError(err: unknown): CliErrorInfo {
   if (code === 'EACCES' || code === 'EISDIR' || code === 'ENOTDIR') {
     return { code: 'file-not-found', message };
   }
+  if (name === 'TimeBudgetExceededError') {
+    // R016 residual (T2/T3, D039/D043): the whole-analysis time-budget abort
+    // is a parse/analysis failure — same category, message and exit code 2 as
+    // the generic fallthrough below, but EXPLICIT so the intent is documented
+    // and the classifyError unit test in cli.test.ts pins it. The stable name
+    // joins the D021 err.name discriminator family; error codes UNCHANGED
+    // (D024 — json-schema stability).
+    return { code: 'parse-failure', message };
+  }
   return { code: 'parse-failure', message };
 }
 

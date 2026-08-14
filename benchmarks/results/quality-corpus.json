@@ -1,0 +1,1536 @@
+{
+  "fixture": "quality corpus (manifest-driven, committed fixtures/)",
+  "label": "corpus",
+  "corpusCount": 28,
+  "corpus": [
+    "minimal.docx",
+    "author-date/simple.docx",
+    "author-date/et-al.docx",
+    "author-date/multiple-authors.docx",
+    "author-date/same-author-year.docx",
+    "author-date/missing.docx",
+    "author-date/ambiguous.docx",
+    "author-date/vietnamese.docx",
+    "documents/docx/apa-like.docx",
+    "documents/docx/harvard.docx",
+    "documents/docx/plain-text.docx",
+    "bibliography/en-references.docx",
+    "bibliography/vi-tai-lieu.docx",
+    "bibliography/style-position.docx",
+    "bibliography/no-bibliography.docx",
+    "bibliography/ambiguous.docx",
+    "match/same-author-two-years.docx",
+    "match/ambiguous-same-author-year.docx",
+    "match/near-miss-author.docx",
+    "match/near-miss-vietnamese.docx",
+    "numeric/basic.docx",
+    "numeric/ranges.docx",
+    "numeric/multiple-brackets.docx",
+    "numeric/out-of-range.docx",
+    "numeric/malformed.docx",
+    "security/vba-sample.docx",
+    "isolation/garbage-and-malformed.docx",
+    "quality/medium.docx"
+  ],
+  "metrics": {
+    "detectionPrecision": 1,
+    "recall": 1,
+    "matchingPrecision": 1,
+    "falsePositiveCount": 0,
+    "falsePositiveRate": 0,
+    "emittedIssueCount": 47,
+    "expectedIssueCount": 47
+  },
+  "perFixture": [
+    {
+      "fixture": "minimal.docx",
+      "emitted": 1,
+      "expected": 1,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 1,
+          "expected": 1,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "author-date/simple.docx",
+      "emitted": 4,
+      "expected": 4,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 4,
+          "expected": 4,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "author-date/et-al.docx",
+      "emitted": 4,
+      "expected": 4,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 4,
+          "expected": 4,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "author-date/multiple-authors.docx",
+      "emitted": 3,
+      "expected": 3,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 3,
+          "expected": 3,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "author-date/same-author-year.docx",
+      "emitted": 3,
+      "expected": 3,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 3,
+          "expected": 3,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "author-date/missing.docx",
+      "emitted": 2,
+      "expected": 2,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 2,
+          "expected": 2,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "author-date/ambiguous.docx",
+      "emitted": 2,
+      "expected": 2,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 2,
+          "expected": 2,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "author-date/vietnamese.docx",
+      "emitted": 4,
+      "expected": 4,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 4,
+          "expected": 4,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "documents/docx/apa-like.docx",
+      "emitted": 5,
+      "expected": 5,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 5,
+          "expected": 5,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "documents/docx/harvard.docx",
+      "emitted": 3,
+      "expected": 3,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 3,
+          "expected": 3,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "documents/docx/plain-text.docx",
+      "emitted": 2,
+      "expected": 2,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 1,
+          "expected": 1,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 1,
+          "expected": 1,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "bibliography/en-references.docx",
+      "emitted": 6,
+      "expected": 6,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "bibliography/vi-tai-lieu.docx",
+      "emitted": 3,
+      "expected": 3,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "bibliography/style-position.docx",
+      "emitted": 4,
+      "expected": 4,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "bibliography/no-bibliography.docx",
+      "emitted": 2,
+      "expected": 2,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 2,
+          "expected": 2,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "bibliography/ambiguous.docx",
+      "emitted": 1,
+      "expected": 1,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 1,
+          "expected": 1,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "match/same-author-two-years.docx",
+      "emitted": 4,
+      "expected": 4,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "match/ambiguous-same-author-year.docx",
+      "emitted": 3,
+      "expected": 3,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 3,
+          "expected": 3,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 2,
+          "expected": 2,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "match/near-miss-author.docx",
+      "emitted": 3,
+      "expected": 3,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "match/near-miss-vietnamese.docx",
+      "emitted": 4,
+      "expected": 4,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "numeric/basic.docx",
+      "emitted": 5,
+      "expected": 5,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "numeric/ranges.docx",
+      "emitted": 7,
+      "expected": 7,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "numeric/multiple-brackets.docx",
+      "emitted": 7,
+      "expected": 7,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "numeric/out-of-range.docx",
+      "emitted": 6,
+      "expected": 6,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 2,
+          "expected": 2,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "numeric/malformed.docx",
+      "emitted": 4,
+      "expected": 4,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 1,
+          "expected": 1,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "security/vba-sample.docx",
+      "emitted": 0,
+      "expected": 0,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "isolation/garbage-and-malformed.docx",
+      "emitted": 3,
+      "expected": 3,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 1,
+          "expected": 1,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 1,
+          "expected": 1,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 1,
+          "expected": 1,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "fixture": "quality/medium.docx",
+      "emitted": 340,
+      "expected": 340,
+      "fp": 0,
+      "issues": {
+        "CS001": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS002": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS003": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS004": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS005": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS006": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS007": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS008": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        },
+        "CS009": {
+          "emitted": 0,
+          "expected": 0,
+          "fp": 0
+        }
+      }
+    }
+  ],
+  "gates": {
+    "detection": "PASS",
+    "recall": "PASS",
+    "matching": "PASS"
+  },
+  "recordedAt": "2026-08-14T08:40:45.316Z"
+}

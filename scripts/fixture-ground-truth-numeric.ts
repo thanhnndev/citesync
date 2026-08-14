@@ -88,4 +88,13 @@ export const KNOWN_NUMERIC_INDEX_MAP: Record<string, KnownNumericIndexMap> = {
     version: 1,
     citations: [R({ citationId: 'c0', tokens: [r(3, 'r2')] })],
   }),
+
+  // M004-S02 (T5): failure-isolation demo — ONE document carries the clean
+  // [1] beside the malformed [1, x]: only the clean bracket emits a row, and
+  // it binds POSITIONALLY to entries[0] = r0 — the garbage entry itself, the
+  // exact isolation surface (even a garbage entry never crashes the pass).
+  'isolation/garbage-and-malformed.docx': M({
+    version: 1,
+    citations: [R({ citationId: 'c0', tokens: [r(1, 'r0')] })],
+  }),
 };

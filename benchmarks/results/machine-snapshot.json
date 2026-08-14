@@ -1,0 +1,10 @@
+{
+  "platform": "linux",
+  "arch": "x64",
+  "release": "7.1.8-1-cachyos",
+  "cpuModel": "13th Gen Intel(R) Core(TM) i9-13900K",
+  "cpuCores": 32,
+  "cpuSpeedMhz": 5500,
+  "totalMemGb": 31.1,
+  "node": "v24.18.0"
+}

@@ -196,4 +196,43 @@ describe('sectionBlockIdsFromHeading — shared span helper unit coverage', () =
     ];
     expect(sectionBlockIdsFromHeading(blocks, 'n0')).toEqual([]);
   });
+
+  it('year-less entry in the leading gap joins the span (M004-S02 isolation contract)', () => {
+    const blocks = [
+      heading('p0', 'References'),
+      block('p1', 'Junk without a year.'),
+      entry('p2', '2017', 'One'),
+      entry('p3', '2018', 'Two'),
+    ];
+    // 'Junk without a year.' carries no '(YYYY)' and a reference-like entry
+    // follows within the lookahead window -> it is a year-less entry, not a
+    // run terminator: the span covers the whole section and §21 parsing
+    // surfaces the year-less line as a reference-parse issue (CS006) while
+    // still resolving [1] to r0 (MEM159).
+    expect(sectionBlockIdsFromHeading(blocks, 'p0')).toEqual(['p0', 'p1', 'p2', 'p3']);
+  });
+
+  it('narrative prose with an in-text (YYYY) citation still terminates the span', () => {
+    const blocks = [
+      heading('p0', 'References'),
+      block('p1', 'According to Johnson (2018), structured citation data improves reproducibility.'),
+      entry('p2', '2017', 'One'),
+    ];
+    // p1 is prose (in-text citation), not a year-less entry -> the span is
+    // the heading alone (apa-like.docx boundary: prose after the heading
+    // must still break, MEM042/MEM118).
+    expect(sectionBlockIdsFromHeading(blocks, 'p0')).toEqual(['p0']);
+  });
+
+  it('unresolved year-less gap (no entry run at all) never joins the span', () => {
+    const blocks = [
+      heading('p0', 'References'),
+      block('p1', 'Junk without a year.'),
+      block('p2', 'More junk without a year.'),
+    ];
+    // No reference-like block follows within the lookahead window -> the gap
+    // never resolves; prose-only aftermath is not a section (no silent guess,
+    // R004).
+    expect(sectionBlockIdsFromHeading(blocks, 'p0')).toEqual(['p0']);
+  });
 });

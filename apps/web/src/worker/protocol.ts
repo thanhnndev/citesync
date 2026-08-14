@@ -138,6 +138,11 @@ const KNOWN_ERROR_NAMES: readonly string[] = [
   'ZipBombError',
   'ParseFailureError',
   'UnsupportedFormatError',
+  // R016 residual (T2/T3, D039): the whole-analysis time-budget abort joins
+  // the D021/D029 err.name discriminator family — the worker forwards it
+  // verbatim (first branch of classifyWorkerError) and the UI maps it to
+  // friendly text via describeWorkerError.
+  'TimeBudgetExceededError',
 ];
 
 /**
@@ -175,6 +180,10 @@ const ERROR_DESCRIPTIONS: Readonly<Record<string, string>> = {
   ParseFailureError: 'The document could not be parsed.',
   UnsupportedFormatError:
     'This DOCX uses an unsupported format (encryption or unknown compression).',
+  // R016 residual (T2/T3, D039): a pathological upload aborts with this
+  // friendly message instead of a spinner hang.
+  TimeBudgetExceededError:
+    'The analysis took too long and was stopped to keep the app responsive.',
 };
 
 /** Map a worker error name to user-facing text (fallback: generic). */

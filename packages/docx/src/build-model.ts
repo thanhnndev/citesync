@@ -52,7 +52,7 @@ import type {
 import { decodeEntities } from './xml/entities.js';
 import { localName } from './xml/ns.js';
 import { attrVal, readOpenTag, scanTagEnd, tagName } from './xml/tag-scan.js';
-import { NotADocxError, ZipBombError } from './zip/errors.js';
+import { NotADocxError, TimeBudgetExceededError, ZipBombError } from './zip/errors.js';
 import { XML_STRING_MAX } from './zip/limits.js';
 import type { ZipParts } from './zip/reader.js';
 import type { PipelineStage } from './pipeline-stages.js';
@@ -99,7 +99,8 @@ export interface BuildModelOptions {
    * `detectBibliography` is SKIPPED — the human's explicit choice replaces
    * the engine's threshold decision (R004: the engine never silently
    * guesses below threshold, but the ask-user flow lets the user direct):
-   *   - a single id is extended with the consecutive reference-like run via
+   *   - a single id is extended with the entry run (reference-like blocks
+   *     plus any resolving year-less leading gap) via
    *     {@link sectionBlockIdsFromHeading} (same span rule as detection);
    *   - a multi-id list is used as-is (the caller already chose the span);
    *   - an unresolvable first id yields a deterministic EMPTY section
@@ -112,6 +113,21 @@ export interface BuildModelOptions {
    * (PIPELINE_STAGES 5-stage invariant).
    */
   bibliographyBlockIds?: string[];
+  /**
+   * Whole-analysis processing time budget (R016 residual, D039/MEM147): a
+   * SAFETY VALVE created ONCE by the caller with a pre-computed `deadline`
+   * (`performance.now() + budgetMs`) and enforced ONLY at the coarse
+   * pipeline checkpoints below — never inside hot loops.
+   *
+   * ABSENT in the default path: a standalone `parseDocument`/`buildModel`
+   * call without this option makes ZERO `performance.now()` reads (R008
+   * purity — same bytes, same model, no clock in the output path). When
+   * present, an over-deadline checkpoint throws
+   * {@link TimeBudgetExceededError}; in-budget inputs are byte-identical
+   * (the check only reads the clock and throws — it never alters the
+   * model).
+   */
+  timeBudget?: { deadline: number };
 }
 
 /**
@@ -122,9 +138,11 @@ export interface BuildModelOptions {
  *   callback — observational, deterministic).
  * @throws {@link ZipBombError} if any decoded part exceeds XML_STRING_MAX.
  *   Structurally invalid archives are already rejected by the reader.
+ * @throws {@link TimeBudgetExceededError} when a caller-supplied `timeBudget`
+ *   deadline passes at a coarse checkpoint (R016 residual safety valve).
  */
 export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): AcademicDocument {
-  const { onStage } = options;
+  const { onStage, timeBudget } = options;
   // Decode the parts we read, enforcing the XML string cap per part.
   const documentXml = decodePart(parts, PART_DOCUMENT);
   if (documentXml === undefined) {
@@ -141,6 +159,7 @@ export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): Ac
 
   // Stage 1/5 (PRD §61): reading the document body. Emitted right before
   // the body parse — the first stage a lintDocument pass reports.
+  checkBudget(timeBudget, 'reading-document');
   onStage?.('reading-document');
 
   // Body blocks (paragraphs + tables) in document order, with source-map runs.
@@ -189,6 +208,7 @@ export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): Ac
 
   // Stage 2/5 (PRD §61): bibliography detection (S02, D009). The stage fires
   // on BOTH paths (detected + recovery) — PIPELINE_STAGES 5-stage invariant.
+  checkBudget(timeBudget, 'detecting-bibliography');
   onStage?.('detecting-bibliography');
   const bodyBlocks = body.entries.map((e) => e.block);
 
@@ -231,6 +251,7 @@ export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): Ac
     };
   }
   // Stage 3/5 (PRD §61): §20 citation occurrence extraction (S03, T06).
+  checkBudget(timeBudget, 'finding-citations');
   onStage?.('finding-citations');
   // S03 (T06): fill §20 citation occurrences — plain-text detection (T03) over
   // every block (body + footnotes + endnotes) with structured-field identity
@@ -251,6 +272,7 @@ export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): Ac
   if (parseIssues.length > 0) doc.parseIssues = parseIssues;
   if (security !== undefined) doc.security = security;
   // Stage 4/5 (PRD §61): §27 citation×reference matching (S04).
+  checkBudget(timeBudget, 'matching-references');
   onStage?.('matching-references');
   // S04 (T2): fill the §27 match-state map LAST — after `citations` and
   // `bibliography.entries` are both populated by the extraction tail above.
@@ -264,7 +286,24 @@ export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): Ac
   ) {
     doc.matchMap = buildMatchMap(doc);
   }
+  // Safety valve (T2): one last coarse checkpoint before handing the model
+  // back — a pathological tail (e.g. a huge match-map build) still aborts
+  // with the typed TimeBudgetExceededError instead of hanging the caller.
+  checkBudget(timeBudget, 'model assembly complete');
   return doc;
+}
+
+/**
+ * Coarse safety-valve checkpoint (T2, R016 residual): throws
+ * {@link TimeBudgetExceededError} once `performance.now()` passes the
+ * deadline. A no-op when no budget was supplied — the default path makes
+ * zero clock reads (R008). Enforced only at the four pipeline-stage
+ * boundaries and before `return`, never inside hot loops.
+ */
+function checkBudget(timeBudget: { deadline: number } | undefined, label: string): void {
+  if (timeBudget !== undefined && performance.now() > timeBudget.deadline) {
+    throw new TimeBudgetExceededError(`processing time budget exceeded at ${label}`);
+  }
 }
 
 /**
@@ -273,7 +312,8 @@ export function buildModel(parts: ZipParts, options: BuildModelOptions = {}): Ac
  * contract (MEM097): ordered section block ids, heading block first — the
  * same shape as the detected-path `BibliographySection.blockIds`.
  *
- *   - a single id: the heading + the consecutive reference-like run via
+ *   - a single id: the heading + the entry run (reference-like blocks plus
+ *     any resolving year-less leading gap) via
  *     {@link sectionBlockIdsFromHeading} (the same span rule as the detected
  *     path — one deterministic implementation for both paths);
  *   - multiple ids: used AS-IS (the caller already selected the exact span;

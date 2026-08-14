@@ -24,6 +24,11 @@
  * any gitignored path). Ground truth is byte-stable (R008): any change to
  * fixture bytes, the model shape, the grammar or the mapping pass drifts the
  * tables below and fails.
+ *
+ * M004-S02 (T5): the failure-isolation demo fixture
+ * `isolation/garbage-and-malformed.docx` joins this corpus — the malformed
+ * [1, x] bracket stays a NEVER-half-emitted surface here too, while the
+ * clean [1] binds positionally to entries[0] = r0 (the garbage entry).
  */
 
 import { readFileSync } from 'node:fs';
@@ -40,13 +45,15 @@ import { KNOWN_NUMERIC_INDEX_MAP } from '../../../scripts/fixture-ground-truth-n
 const FIXTURES_DIR = fileURLToPath(new URL('../../../fixtures/', import.meta.url));
 const GOLDEN_DIR = fileURLToPath(new URL('./golden/', import.meta.url));
 
-/** The committed numeric corpus (mirrors scripts/make-fixtures.ts). */
+/** The committed numeric corpus (mirrors scripts/make-fixtures.ts + the
+ *  M004-S02 isolation demo fixture). */
 const NUMERIC_FIXTURES = [
   'numeric/basic.docx',
   'numeric/ranges.docx',
   'numeric/multiple-brackets.docx',
   'numeric/out-of-range.docx',
   'numeric/malformed.docx',
+  'isolation/garbage-and-malformed.docx',
 ];
 
 /** One numeric fixture's expected map row count (numeric citations only). */
@@ -56,6 +63,7 @@ const EXPECTED_NUMERIC_ROWS: Record<string, number> = {
   'numeric/multiple-brackets.docx': 3,
   'numeric/out-of-range.docx': 3,
   'numeric/malformed.docx': 1,
+  'isolation/garbage-and-malformed.docx': 1,
 };
 
 // ---------------------------------------------------------------------------
@@ -155,6 +163,9 @@ describe('M002-S01-T4 — typed numeric citations through the public API', () =>
         { raw: '[0]', numbers: [0] },
       ],
       'numeric/malformed.docx': [{ raw: '[3]', numbers: [3] }],
+      // M004-S02: the isolation demo's only numeric citation is the clean [1]
+      // (the malformed [1, x] never half-emits — R007).
+      'isolation/garbage-and-malformed.docx': [{ raw: '[1]', numbers: [1] }],
     };
     for (const rel of NUMERIC_FIXTURES) {
       const doc = parseDocument(readFileSync(join(FIXTURES_DIR, rel)));
@@ -179,6 +190,24 @@ describe('M002-S01-T4 — typed numeric citations through the public API', () =>
     expect(doc.numericIndexMap!.citations).toHaveLength(1);
     expect(doc.numericIndexMap!.citations[0]!.tokens).toMatchObject([
       { index: 3, status: 'resolved', resolvedEntryId: 'r2' },
+    ]);
+  });
+
+  it('keeps the same never-half-emitted invariant in the isolation demo (R007)', () => {
+    const doc = parseDocument(readFileSync(join(FIXTURES_DIR, 'isolation/garbage-and-malformed.docx')));
+    // The isolation demo carries the SAME malformed [1, x] surface beside a
+    // clean [1] — only the clean bracket emits (plus the two entry tails);
+    // the garbage entry 'Junk without a year.' emits NO citation at all.
+    expect(doc.citations.map((c) => c.raw)).toEqual([
+      '[1]',
+      'Doe, J. (2017)',
+      'Roe, M. (2018)',
+    ]);
+    expect(doc.numericIndexMap!.citations).toHaveLength(1);
+    // [1] binds POSITIONALLY to entries[0] = the garbage entry r0 (D016) —
+    // the exact isolation surface: even a garbage entry never crashes.
+    expect(doc.numericIndexMap!.citations[0]!.tokens).toMatchObject([
+      { index: 1, status: 'resolved', resolvedEntryId: 'r0' },
     ]);
   });
 

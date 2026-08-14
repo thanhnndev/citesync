@@ -1,0 +1,48 @@
+{
+  "fixture": "fixtures/perf/100-page.docx",
+  "label": "post",
+  "warmupRuns": 3,
+  "measuredRuns": 8,
+  "totalMs": {
+    "median": 240.7,
+    "p95": 275.1,
+    "min": 229,
+    "max": 275.1,
+    "spreadPct": 19.1
+  },
+  "stageMs": {
+    "reading-document": {
+      "median": 3.6,
+      "p95": 9
+    },
+    "detecting-bibliography": {
+      "median": 4.3,
+      "p95": 4.8
+    },
+    "finding-citations": {
+      "median": 70.4,
+      "p95": 90
+    },
+    "matching-references": {
+      "median": 156.4,
+      "p95": 165.8
+    },
+    "running-checks": {
+      "median": 1.6,
+      "p95": 2.1
+    }
+  },
+  "gateMs": 3000,
+  "passesGate": true,
+  "machine": {
+    "platform": "linux",
+    "arch": "x64",
+    "release": "7.1.8-1-cachyos",
+    "cpuModel": "13th Gen Intel(R) Core(TM) i9-13900K",
+    "cpuCores": 32,
+    "cpuSpeedMhz": 5500,
+    "totalMemGb": 31.1,
+    "node": "v24.18.0"
+  },
+  "recordedAt": "2026-08-14T03:14:31.939Z"
+}

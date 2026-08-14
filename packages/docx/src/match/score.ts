@@ -92,6 +92,47 @@ export interface CitationScore {
 }
 
 /**
+ * Per-item citation-side keys precomputed ONCE per item (T3, R008/R017).
+ *
+ * The scorer previously rebuilt the SAME pure keys — first-author key,
+ * given-initials key and the filtered additional-author key list — for every
+ * one of the ~260 entries a 100-page document is scored against: ~770K
+ * redundant `citationAuthorKey`/`buildNameKey` normalizations on the
+ * citation side. All three are pure functions of the item alone, so deriving
+ * them once and reusing them across the per-entry loop keeps every score,
+ * reason, tier and tie-break byte-identical (pure caching of pure functions
+ * — no cross-call state, no global cache).
+ */
+export interface CitationDerived {
+  /** First-author family key (`firstAuthor ?? authors[0]`). */
+  firstKey: PersonNameKey;
+  /** Given-initials key of the first-author display (et al. stripped, MEM038). */
+  givenInitials: string;
+  /** Additional real authors, keyed and filtered (exact !== ''). */
+  additionalKeys: PersonNameKey[];
+}
+
+/**
+ * Derive the item-side keys consumed by scoring — once per item, before the
+ * per-entry loop (T3). Pure and deterministic (R008): a function of
+ * `citationItem` alone, with no I/O, no clock, no locale calls.
+ */
+export function deriveCitationKeys(
+  citationItem: AuthorDateCitationItem,
+): CitationDerived {
+  const firstRaw =
+    citationItem.firstAuthor ?? citationItem.authors?.[0] ?? '';
+  return {
+    firstKey: citationAuthorKey(firstRaw),
+    givenInitials: citationGivenInitials(citationItem),
+    additionalKeys: (citationItem.authors ?? [])
+      .slice(1)
+      .map((a) => citationAuthorKey(a))
+      .filter((k) => k.exact !== ''),
+  };
+}
+
+/**
  * Score one §20 author-date citation item against one §21 reference entry.
  *
  * @param citationItem the citation item to match (firstAuthor/authors/year/
@@ -106,12 +147,41 @@ export function scoreCitationAgainstEntry(
   entry: ReferenceEntry,
   weights: MatchWeights = MATCH_WEIGHTS,
 ): CitationScore {
+  // T3: the public scorer keeps its exact signature and behavior; it derives
+  // the per-item keys once and delegates to the internal per-entry entry
+  // point (pure caching of pure functions — byte-identical output, R008).
+  return scoreCitationAgainstEntryDerived(
+    citationItem,
+    deriveCitationKeys(citationItem),
+    entry,
+    weights,
+  );
+}
+
+/**
+ * Internal per-entry scoring entry point (T3). Consumes the precomputed
+ * citation-side keys of `CitationDerived` instead of rebuilding them for
+ * each entry the item is scored against. The score arithmetic, reasons
+ * array order, tiers and MATCH_THRESHOLD/MATCH_MARGIN semantics are EXACTLY
+ * the public `scoreCitationAgainstEntry` behavior — only pure string key
+ * construction moved earlier. `derived` is a value passed by the caller,
+ * never a cache: no cross-call state.
+ *
+ * @param citationItem the citation item (year/yearSuffix/page read here).
+ * @param derived      the once-per-item keys from `deriveCitationKeys`.
+ * @param entry        the reference entry to score against.
+ * @param weights      the §26 named weight set (defaults to MATCH_WEIGHTS).
+ */
+export function scoreCitationAgainstEntryDerived(
+  citationItem: AuthorDateCitationItem,
+  derived: CitationDerived,
+  entry: ReferenceEntry,
+  weights: MatchWeights = MATCH_WEIGHTS,
+): CitationScore {
   const reasons: MatchReason[] = [];
 
   // ---- First-author tier (§25 ladder over the stored keys) ----
-  const firstRaw =
-    citationItem.firstAuthor ?? citationItem.authors?.[0] ?? '';
-  const citationKey = citationAuthorKey(firstRaw);
+  const citationKey = derived.firstKey;
   const entryFirst = entry.authors?.[0];
   const tier =
     entryFirst !== undefined && citationKey.exact !== ''
@@ -138,7 +208,7 @@ export function scoreCitationAgainstEntry(
   // the §79 false-positive class the near-miss-author fixture pins. The tier
   // stays the surname tier reached (the surname DID match); only the credit is
   // zeroed.
-  if (givenInitialsConflict(citationItem, entryFirst)) {
+  if (givenInitialsConflict(derived.givenInitials, entryFirst)) {
     authorCredit = 0;
     reasons.push('given-initial-mismatch');
   }
@@ -183,10 +253,7 @@ export function scoreCitationAgainstEntry(
   // additional authors to compare against yields half credit (truncated
   // entry — cannot verify, §79).
   let additionalCredit = weights.additionalAuthors;
-  const citationAdditional = (citationItem.authors ?? [])
-    .slice(1)
-    .map((a) => citationAuthorKey(a))
-    .filter((k) => k.exact !== '');
+  const citationAdditional = derived.additionalKeys;
   if (citationAdditional.length > 0) {
     const entryAdditional = (entry.authors ?? []).slice(1);
     if (entryAdditional.length === 0) {
@@ -308,11 +375,10 @@ function clamp01(x: number): number {
  * Do pair never reaches this guard via a false family-initial equality.
  */
 function givenInitialsConflict(
-  citationItem: AuthorDateCitationItem,
+  citationInitials: string,
   entryFirst: PersonName | undefined,
 ): boolean {
   if (entryFirst === undefined || entryFirst.given === undefined) return false;
-  const citationInitials = citationGivenInitials(citationItem);
   const entryInitials = entryFirst.key.initials;
   if (citationInitials.length < 2 || entryInitials.length < 2) return false;
   if (citationInitials[0] !== entryInitials[0]) return false;

@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { zipSync, strToU8 } from 'fflate';
 import { describe, expect, it } from 'vitest';
 
-import { runCli } from '../src/index.js';
+import { runCli, classifyError, exitCodeForFailure } from '../src/index.js';
 import { REPORT_VERSION } from '../src/report.js';
 import { renderDetailed, renderDefault, renderUsage } from '../src/render.js';
 
@@ -93,6 +93,22 @@ function buildUnsupportedDocx(): string {
   writeFileSync(path, buf);
   return path;
 }
+
+describe('classifyError — TimeBudgetExceededError (T3, R016 budget abort)', () => {
+  it('classifies the whole-analysis time-budget abort as parse-failure (exit 2)', () => {
+    // A real TimeBudgetExceededError thrown by lintDocument (D039/D043)
+    // surfaces here as an Error whose name is the D021 discriminator — the
+    // CLI branches on the stable name, never on instanceof.
+    const err = Object.assign(new Error('budget hit'), { name: 'TimeBudgetExceededError' });
+    expect(classifyError(err)).toEqual({ code: 'parse-failure', message: 'budget hit' });
+    expect(exitCodeForFailure('parse-failure')).toBe(2);
+  });
+
+  it('keeps the generic fallthrough byte-identical for unknown Error names', () => {
+    const err = Object.assign(new Error('mystery'), { name: 'SomeFutureError' });
+    expect(classifyError(err)).toEqual({ code: 'parse-failure', message: 'mystery' });
+  });
+});
 
 describe('exit code 0 — clean document (no consistency errors)', () => {
   it('default mode: exit 0 + "No consistency issues found."', () => {

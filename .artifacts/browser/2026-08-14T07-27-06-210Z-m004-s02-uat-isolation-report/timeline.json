@@ -1,0 +1,17 @@
+{
+  "entries": [
+    {
+      "id": 1,
+      "tool": "browser_navigate",
+      "status": "success",
+      "durationMs": 824,
+      "beforeUrl": "about:blank",
+      "afterUrl": "http://localhost:4173/",
+      "line": "#1 | browser_navigate | success | 824ms | url=\"http://localhost:4173\", screenshot=true | URL changed to http://localhost:4173/; title changed to CiteSync; landmarks 0→4; inputs 0→1 | Warnings: JS: Failed to load resource: the server responded with a status of 404 (Not Found)\nUse browser_get_console_logs/browser_get_network_logs for full diagnostics."
+    }
+  ],
+  "retained": 1,
+  "totalRecorded": 1,
+  "bounded": false,
+  "summary": "Timeline: 1 browser action recorded."
+}

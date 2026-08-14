@@ -1,0 +1,62 @@
+- main:
+  - heading "CiteSync" [level=1]
+  - status: Processed locally — never left this device
+  - button "Choose a .docx file to analyze"
+  - paragraph: Drop a .docx file here
+  - paragraph: or click to choose — analysis runs locally in your browser
+  - region "Analysis stages":
+    - heading "Analysis stages" [level=2]
+    - list:
+      - listitem:
+        - text: Reading document
+        - code: reading-document
+      - listitem:
+        - text: Detecting bibliography
+        - code: detecting-bibliography
+      - listitem:
+        - text: Finding citations
+        - code: finding-citations
+      - listitem:
+        - text: Matching references
+        - code: matching-references
+      - listitem:
+        - text: Running checks
+        - code: running-checks
+  - region "Report summary":
+    - heading "Report" [level=2]
+    - list:
+      - listitem: ERROR 1
+      - listitem: WARNING 2
+      - listitem: AMBIGUOUS 0
+      - listitem: INFO 0
+    - paragraph: 3 citations · 3 references · 9 rules applied
+  - region "Export report":
+    - heading "Export" [level=2]
+    - button "Export report as JSON": Download JSON report
+    - button "Export report as HTML": Download HTML report
+  - region "Issues by severity":
+    - heading "Issues" [level=2]
+    - heading "ERROR 1" [level=3]
+    - list:
+      - listitem:
+        - 'button "CS006:0 Unparseable reference entry 1: ''Junk without a year.'' — no (YYYY) year marker."':
+          - code: CS006:0
+          - text: "Unparseable reference entry 1: 'Junk without a year.' — no (YYYY) year marker."
+    - heading "WARNING 2" [level=3]
+    - list:
+      - listitem:
+        - 'button "CS007:0 Invalid numeric citation ''[1, x]'': the bracket mixes numeric indices with non-numeric text (e.g. \"[1, x]\")."':
+          - code: CS007:0
+          - text: "Invalid numeric citation '[1, x]': the bracket mixes numeric indices with non-numeric text (e.g. \"[1, x]\")."
+      - listitem:
+        - 'button "CS002:0 Unused reference: bibliography entry ''Junk without a year.'' is never cited."':
+          - code: CS002:0
+          - text: "Unused reference: bibliography entry 'Junk without a year.' is never cited."
+  - region "Document source":
+    - heading "Document" [level=2]
+    - paragraph: The clean citation [1] resolves against the reference list.
+    - paragraph: The malformed bracket [1, x] must surface as a typed issue, never a crash.
+    - paragraph: References
+    - paragraph: Junk without a year.
+    - paragraph: Doe, J. (2017).
+    - paragraph: Roe, M. (2018).

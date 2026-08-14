@@ -1,9 +1,10 @@
 # Fixtures (S01-T7)
 
-Committed .docx binaries authored by `scripts/make-fixtures.ts` (run via `npx tsx`).
+Committed .docx binaries authored by `scripts/make-fixtures.ts`,
+`scripts/make-perf-fixture.ts` and `scripts/make-isolation-fixture.ts` (run via `npx tsx`).
 Authoring uses fflate + hand-authored OOXML — **never the reader** — and is fully
 deterministic (R008/R017): pinned DOS timestamps, fixed entry order, no clock/random.
-Re-running the script rewrites byte-identical files.
+Re-running the scripts rewrites byte-identical files.
 
 ## Golden anchor
 
@@ -63,6 +64,135 @@ Re-running the script rewrites byte-identical files.
 | `numeric/multiple-brackets.docx` | multiple adjacent brackets `[1][2,3]` plus a trailing `[4]` — distinct regions (§20) |
 | `numeric/out-of-range.docx` | resolved `[1]` beside out-of-range `[5]` and unmatched `[0]` — conservative surface, never silently guessed (§79) |
 | `numeric/malformed.docx` | clean `[3]` emits while malformed `[1, x]` NEVER half-emits (R007, invalid-numeric surface for CS007 in S2) |
+
+## Corpus (perf — M004-S01 load artifact)
+
+`perf/100-page.docx` is a deterministic **load artifact** for the M004-S01
+performance proof — the same document drives the `benchmark:perf` harness
+(T2/T4), the Playwright large-doc spec (T5) and the S03 corpus sizing. It is
+NOT a quality-corpus case: it joins `VALID_FIXTURES` and the generic per-
+fixture assertions in `packages/docx/tests/fixture.test.ts` only, and is
+deliberately absent from `scripts/fixture-ground-truth*.ts` (MEM065 atomicity
+applies to the quality corpus only).
+
+Regenerate with:
+
+```
+npx tsx scripts/make-perf-fixture.ts
+```
+
+The generator self-checks byte-identity (R017: build twice in memory, plus a
+re-run after commit must leave `fixtures/perf` byte-identical).
+
+Documented counts (measured from the committed file — the "100 pages" claim is
+checkable):
+
+| count | value |
+|-------|-------|
+| file size | 120,099 bytes |
+| `word/document.xml` | 503,320 chars (well under the 1M design bound and the `limits.ts` caps) |
+| body paragraphs | 900 (10 chapters x 90) |
+| words | 53,507 (~107 pages at ~500 words/page) |
+| authored citation strings | 2,695 (2,435 body + 260 reference-entry tails) |
+| pipeline citation occurrences | 2,335 (extractor view; used by the matcher hot path) |
+| reference entries | 260 (detected `References` section) |
+| footnotes | 30 (note-scanning path) |
+| tables | 3 (table-flattening path) |
+| Zotero CSL fields | 6 (structured-field path) |
+| Heading1 paragraphs | 11 (`Chapter 1..10` + `References`) — styles.xml style-map path |
+
+Content structure: every body paragraph carries 2-3 realistic author-date
+citations drawn from the same 260-author pool as the reference list (so
+citations find real matching entries); the `KNOWN_CITATIONS` strings
+(`Smith (2020)`, `(Nguyen & Tran, 2021)`) are authored verbatim in Chapter 1's
+first body paragraph so the `fixture.test.ts` offset round-trip holds.
+
+## Corpus (isolation — M004-S02 failure-isolation demo)
+
+`isolation/garbage-and-malformed.docx` is the deterministic **failure-isolation
+demo** for the R016 hardening proof: ONE document carries BOTH typed issue
+classes the S02 demo surfaces through the public `lintDocument` — a garbage
+reference entry (`Junk without a year.` → CS006 reference-parse) and a
+malformed bracket (`[1, x]` → CS007 invalid-numeric `mixed`) — beside a clean
+`[1]` that binds positionally to `r0` (the garbage entry itself: even a
+garbage entry never crashes the analysis) and 2 valid entries
+(`Doe, J. (2017).`, `Roe, M. (2018).`) so bibliography detection and D016
+matching really run.
+
+It is NOT a quality-corpus case: it joins `VALID_FIXTURES` and the generic
+per-fixture assertions in `packages/docx/tests/fixture.test.ts` plus the
+numeric ground-truth locks (`KNOWN_NUMERIC_INDEX_MAP` +
+`packages/docx/tests/numeric-fixture.test.ts`) so the
+malformed-bracket-never-persisted invariant (R007/MEM092) stays guarded — the
+MEM065 atomicity carve-out applies to the S03 quality corpus only.
+
+Regenerate with:
+
+```
+npx tsx scripts/make-isolation-fixture.ts
+```
+
+The generator self-checks byte-identity (R017: build twice in memory, plus a
+re-run after commit must leave `fixtures/isolation` byte-identical).
+
+Documented counts (measured from the committed file — the demo surface is
+checkable):
+
+| count | value |
+|-------|-------|
+| file size | 2,664 bytes |
+| `word/document.xml` | 719 chars |
+| blocks | 6 (2 body paragraphs + 1 `References` Heading1 + 3 reference entries) |
+| reference entries | 3 (1 garbage → CS006, 2 valid → bibliography detected + D016 matching runs) |
+| expected typed issues | CS006 x1 (reference-parse) + CS007 x1 (invalid-numeric `mixed`) |
+
+## Corpus (quality — M004-S03 R017 gate corpus)
+
+`quality/medium.docx` is a deterministic **synthetic quality-corpus fixture**
+giving the R017 quality gates (detection precision >= 0.98 / recall >= 0.95 /
+matching precision >= 0.97, FP = 0, asserted by `packages/core/tests/
+quality-gates.test.ts`) real statistical weight: the hand corpus (~92
+expected raws / 39 MATCHED rows) has almost no headroom — 2 wrong
+detections drop precision to 97.8% (< 98%) — so a single wrong regression
+flips a gate. This fixture's 340 raws are 100%-authored ground truth, so a
+wrong regression must now fail against ~10x the evidence.
+
+It carries its OWN generated manifest
+(`scripts/fixture-ground-truth-quality.ts`, emitted byte-for-byte by the
+generator) and joins NO ground-truth manifests (`KNOWN_OCCURRENCES` /
+`KNOWN_REFERENCES` / `KNOWN_MATCHES` / `KNOWN_NUMERIC_INDEX_MAP`) and NO
+numeric locks — the MEM065/MEM165 atomicity carve-out applies to the S03
+quality corpus only. Content contract: 60 single-author entries with UNIQUE
+(family, year) keys (no CS004/CS005), every entry cited >= 1x (no
+CS001/CS002/CS009), all entries §21-parseable at confidence 1 (no CS006),
+no numeric content (no CS007/CS008) → zero expected issues.
+
+Regenerate with:
+
+```
+npx tsx scripts/make-quality-fixture.ts
+```
+
+The generator self-checks byte-identity for BOTH the fixture and the
+manifest (R017: build twice in memory, plus a re-run after commit must leave
+both files byte-identical). The `KNOWN_CITATIONS` anchors (`Smith (2020)`
+narrative, `(Nguyen, 2021)` parenthetical — single-author; a documented
+deviation from the perf fixture's multi-author anchor) are authored verbatim
+in body paragraph 1 so the `fixture.test.ts` offset round-trip holds.
+
+Documented counts (measured from the committed file — the corpus claim is
+checkable):
+
+| count | value |
+|-------|-------|
+| file size | 7,487 bytes |
+| `word/document.xml` | 29,279 chars |
+| blocks | 101 (40 body + 1 `References` Heading1 + 60 reference entries) |
+| body paragraphs | 40 x 7 citations = 280 body citations |
+| words | 2,694 |
+| reference entries | 60 (unique (family, year) keys, all §21-parseable) |
+| total expected raws | 340 (280 body + 60 entry tails) |
+| expected issues | 0 (all-zero — unique keys, full coverage, clean parse, no numeric) |
 
 ## Security samples
 
@@ -555,4 +685,8 @@ tables).
 ### numeric/malformed.docx (numeric index map)
 
 - `c0` → 3:resolved->r2
+
+### isolation/garbage-and-malformed.docx (numeric index map)
+
+- `c0` → 1:resolved->r0
 

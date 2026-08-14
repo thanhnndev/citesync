@@ -91,6 +91,15 @@ const REFERENCE_LIKE_RE =
   /^[\p{L}][\p{L}\s.,'’“”&–-]{1,80}\(\d{4}\)[.:]/u;
 
 /**
+ * In-text citation marker: a parenthesized 4-digit year anywhere in a line
+ * (`(2018)`, `(Doe, 2017; Roe, 2019)`). A non-reference-like line carrying
+ * one is narrative prose (a real bibliography does not cite in-text), never
+ * a year-less entry — apa-like.docx's paragraphs after 'References' break on
+ * this signal (MEM042/MEM118).
+ */
+const IN_TEXT_YEAR_RE = /\(\d{4}\)/u;
+
+/**
  * Fold text for signal comparison: lowercase, strip combining diacritics
  * (NFD + remove U+0300–U+036F), collapse whitespace. "Tài liệu tham khảo",
  * "TAI LIEU THAM KHAO" and "Tài liệu   tham khảo" all fold to the same key.
@@ -207,9 +216,12 @@ export function detectBibliography(
  * recovery path, PRD §63 ask-user). ONE deterministic span implementation
  * shared by the detected path (`buildSection`) and the `bibliographyBlockIds`
  * recovery path in buildModel — same shape, same rule: heading block first,
- * then the consecutive run of reference-like BODY blocks in document order,
- * breaking at the first non-reference-like body block (S03's entry-parsing
- * scope, MEM097).
+ * then the entry run — reference-like BODY blocks in document order, plus a
+ * LEADING gap of year-less entry lines between the heading and the first
+ * reference-like entry (M004-S02 isolation contract) — breaking at the first
+ * block that is neither reference-like nor a resolving year-less gap line
+ * (S03's entry-parsing scope, MEM097; prose with in-text citations still
+ * breaks, MEM042/MEM118).
  *
  * @param blocks - the document's blocks (body + notes; notes are excluded —
  *   a bibliography lives in the body, never in notes).
@@ -227,12 +239,57 @@ export function sectionBlockIdsFromHeading(
   const headingIndex = body.findIndex((b) => b.id === headingBlockId);
   if (headingIndex === -1) return [];
   const blockIds: string[] = [headingBlockId];
+  const pendingGap: string[] = [];
+  let inEntryRun = false;
   for (let i = headingIndex + 1; i < body.length; i += 1) {
     const block = body[i];
-    if (block === undefined || !isReferenceLike(block)) break; // run ends at first non-entry
-    blockIds.push(block.id);
+    if (block === undefined) break;
+    if (isReferenceLike(block)) {
+      // Entry: commit any pending year-less gap and extend the run.
+      blockIds.push(...pendingGap, block.id);
+      pendingGap.length = 0;
+      inEntryRun = true;
+      continue;
+    }
+    // Year-less entry lines open a LEADING gap only (between the heading and
+    // the first reference-like entry): a non-blank, non-heading line without
+    // a parenthesized year ('Junk without a year.') is a candidate §21 entry
+    // (M004-S02 isolation contract) — it joins the section when a
+    // reference-like entry follows within the lookahead window, so it
+    // surfaces as a reference-parse issue (CS006) instead of silently
+    // truncating the section. Narrative prose with in-text citations
+    // '(YYYY)' (apa-like.docx) still terminates the span.
+    if (!inEntryRun && isYearLessGapBlock(block, body, i)) {
+      pendingGap.push(block.id);
+      continue;
+    }
+    break; // entry run ends at the first non-entry block
   }
   return blockIds;
+}
+
+/**
+ * A leading-gap block: a plausible year-less entry line between the heading
+ * and the first reference-like entry. Conservative by design — rejects blank
+ * blocks, headings, and any line carrying an in-text citation `(YYYY)`; and
+ * the gap only resolves when a reference-like block follows within the
+ * lookahead window (prose that never reaches an entry run is not a section).
+ */
+function isYearLessGapBlock(
+  block: DocumentBlock,
+  body: DocumentBlock[],
+  index: number,
+): boolean {
+  if (block.text.trim() === '') return false;
+  if (block.type === 'heading') return false;
+  if (IN_TEXT_YEAR_RE.test(block.text)) return false; // narrative prose
+  const end = Math.min(body.length, index + 1 + REFERENCE_LIKE_LOOKAHEAD);
+  for (let j = index + 1; j < end; j += 1) {
+    const next = body[j];
+    if (next === undefined) break;
+    if (isReferenceLike(next)) return true;
+  }
+  return false;
 }
 
 /** Fraction of the next `REFERENCE_LIKE_LOOKAHEAD` body blocks that are reference-like. */
@@ -248,10 +305,12 @@ function referenceLikeFractionAfter(body: DocumentBlock[], start: number): numbe
 }
 
 /**
- * Build the detected section: the heading block first, then the consecutive
- * run of reference-like blocks (the S03 entry-parsing scope). The run breaks
- * at the first non-reference-like body block; a heading with no entries at all
- * yields `[headingBlockId]` (an empty section is still a section).
+ * Build the detected section: the heading block first, then the entry run —
+ * the consecutive reference-like blocks plus any resolving year-less leading
+ * gap (the S03 entry-parsing scope, shared span rule). The run breaks at the
+ * first block that is neither reference-like nor a resolving year-less gap
+ * line; a heading with no entries at all yields `[headingBlockId]` (an empty
+ * section is still a section).
  */
 function buildSection(body: DocumentBlock[], best: ScoredCandidate): BibliographySection {
   return {
