@@ -46,6 +46,7 @@ import { resolutionCandidatesForIssue } from './explorer/explorer';
 import { applyResolutions } from './resolutions/resolutions';
 import type { ResolutionsView } from './resolutions/resolutions';
 import { describeWorkerError } from './worker/protocol';
+import './design-system.css';
 import './app.css';
 
 /** Badge text per state — the badge element ALWAYS exists, text drives e2e. */

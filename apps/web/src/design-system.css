@@ -1,0 +1,135 @@
+/*
+ * CiteSync design system — CSS custom properties (M005-S01-T03).
+ *
+ * Nguồn contract: docs/UI-SPEC.md §1 (design tokens), §2.1 (breakpoints),
+ * §1.7 (bảng đối chiếu hiện tại → token). Mọi giá trị ở đây là 1:1 với
+ * UI-SPEC — nếu đổi token, phải đổi spec cùng lúc (contract test guard:
+ * apps/web/tests/design-tokens.test.ts).
+ *
+ * Quy ước naming (UI-SPEC §1): --cs-{category}-{name}[-{variant}]
+ *   category: color | font | space | radius | shadow | z | bp
+ *
+ * Legacy aliases (--color-*, --radius) giữ ở cuối file để không phá bất kỳ
+ * tham chiếu nào còn sót; toàn bộ app.css mới chỉ đọc token --cs-*.
+ * Theme dark (S04, optional): chỉ override token trên [data-theme="dark"].
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ---------------------------------------------------------------- */
+  /* 1.1 Color                                                         */
+  /* ---------------------------------------------------------------- */
+  --cs-color-bg: #f6f8fa; /* nền trang */
+  --cs-color-bg-surface: #ffffff; /* bề mặt card/panel */
+  --cs-color-bg-subtle: #f6f8fa; /* well nhạt (row, chip) */
+  --cs-color-bg-hover: #eef4ff; /* hover/selected accent-tinted */
+  --cs-color-bg-highlight: #fffdf0; /* block được highlight trong doc */
+  --cs-color-fg: #1f2328; /* chữ chính */
+  --cs-color-fg-muted: #656d76; /* chữ phụ (caption, meta) */
+  --cs-color-fg-inverse: #ffffff; /* chữ trên nền accent */
+  --cs-color-border: #d0d7de; /* viền mặc định */
+  --cs-color-border-strong: #aeb6be; /* viền nổi bật (selected row) */
+  --cs-color-accent: #1a5cff; /* thương hiệu / hành động chính */
+  --cs-color-accent-hover: #0d47d0; /* accent hover */
+  --cs-color-accent-tint: #eef4ff; /* nền tint accent */
+  --cs-color-done: #1a7f37; /* thành công / resolved */
+
+  /* 1.1.1 Severity mapping (ERROR → WARNING → AMBIGUOUS → INFO, D022/D024).
+     Màu severity KHÔNG dùng đơn lẻ — luôn có nhãn chữ/marker (PRD §89). */
+  --cs-color-severity-error: #d1242f;
+  --cs-color-severity-error-tint: #ffebe9;
+  --cs-color-severity-warning: #9a6700;
+  --cs-color-severity-warning-tint: #fff8c5;
+  --cs-color-severity-ambiguous: #bc4c00;
+  --cs-color-severity-ambiguous-tint: #fff1e5;
+  --cs-color-severity-info: #57606a;
+  --cs-color-severity-info-tint: #eaeef2;
+
+  /* ---------------------------------------------------------------- */
+  /* 1.2 Typography (dependency-free — offline-first PRD §11)          */
+  /* ---------------------------------------------------------------- */
+  --cs-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --cs-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --cs-font-size-display: 1.75rem; /* H1 — tiêu đề app (header) */
+  --cs-font-size-h2: 1.1rem; /* H2 — tiêu đề section/panel */
+  --cs-font-size-h3: 0.95rem; /* H3 — tiêu đề phụ */
+  --cs-font-size-body: 0.95rem; /* nội dung chính */
+  --cs-font-size-caption: 0.85rem; /* caption, meta, hint, badge */
+  --cs-font-size-code: 0.8rem; /* code, issue id, stage-name, confidence */
+  --cs-font-size-code-sm: 0.75rem; /* code nhỏ (evidence-code, row-id) */
+  --cs-line-height-tight: 1.25; /* heading */
+  --cs-line-height-normal: 1.5; /* body */
+  --cs-font-weight-semibold: 600; /* emphasis vừa */
+  --cs-font-weight-bold: 700; /* counts, badge mạnh */
+
+  /* ---------------------------------------------------------------- */
+  /* 1.3 Spacing (scale 4px, 8 bậc + gutter trang)                    */
+  /* ---------------------------------------------------------------- */
+  --cs-space-1: 4px;
+  --cs-space-2: 8px;
+  --cs-space-3: 12px;
+  --cs-space-4: 16px;
+  --cs-space-5: 24px;
+  --cs-space-6: 32px;
+  --cs-space-7: 48px;
+  --cs-space-8: 64px;
+  --cs-space-page-x: 16px; /* mobile; ≥768px override bên dưới */
+
+  /* ---------------------------------------------------------------- */
+  /* 1.4 Border radius                                                 */
+  /* ---------------------------------------------------------------- */
+  --cs-radius-sm: 4px; /* row, chip, code badge, highlight mark */
+  --cs-radius-md: 8px; /* card, panel, button, drop-zone */
+  --cs-radius-lg: 12px; /* modal, large surface (S02+) */
+  --cs-radius-pill: 999px; /* badge tròn (S02+) */
+
+  /* ---------------------------------------------------------------- */
+  /* 1.5 Shadow                                                        */
+  /* ---------------------------------------------------------------- */
+  --cs-shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.08); /* card nổi nhẹ */
+  --cs-shadow-md: 0 4px 12px rgba(31, 35, 40, 0.12); /* panel nổi / sticky header */
+  --cs-shadow-lg: 0 12px 32px rgba(31, 35, 40, 0.18); /* modal, overlay (S02+) */
+
+  /* ---------------------------------------------------------------- */
+  /* 1.6 Z-index                                                       */
+  /* ---------------------------------------------------------------- */
+  --cs-z-base: 0;
+  --cs-z-zone-overlay: 1; /* overlay file-input trong drop-zone */
+  --cs-z-sticky: 100; /* header sticky (S02+) */
+  --cs-z-overlay: 1000; /* overlay backdrop */
+  --cs-z-modal: 1100; /* modal */
+  --cs-z-toast: 1200; /* toast / inline error nổi (S02+) */
+}
+
+/* 2.1 Breakpoints (desktop-first — PRD §56) */
+:root {
+  --cs-bp-wide: 1024px; /* ≥1024px: full desktop */
+  --cs-bp-narrow: 768px; /* 768–1023px: desktop hẹp */
+  --cs-bp-tablet: 767px; /* ≤767px (max-width): tablet/mobile ngang */
+  --cs-bp-mobile: 480px; /* ≤480px (max-width): mobile nhỏ */
+}
+
+/* Gutter trang responsive: 16px mobile / 24px ≥768px (UI-SPEC §1.3) */
+@media (min-width: 768px) {
+  :root {
+    --cs-space-page-x: 24px;
+  }
+}
+
+/* ---------------------------------------------------------------- */
+/* 1.7 Legacy aliases (bảng đối chiếu hiện tại → token)              */
+/* ---------------------------------------------------------------- */
+:root {
+  --color-accent: var(--cs-color-accent);
+  --color-border: var(--cs-color-border);
+  --color-text: var(--cs-color-fg);
+  --color-muted: var(--cs-color-fg-muted);
+  --color-error: var(--cs-color-severity-error);
+  --color-warning: var(--cs-color-severity-warning);
+  --color-ambiguous: var(--cs-color-severity-ambiguous);
+  --color-info: var(--cs-color-severity-info);
+  --color-done: var(--cs-color-done);
+  --radius: var(--cs-radius-md);
+}
