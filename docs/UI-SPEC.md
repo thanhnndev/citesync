@@ -24,8 +24,9 @@
 4. [State Inventory](#4-state-inventory)
 5. [Mockups từng màn hình](#5-mockups-từng-màn-hình)
 6. [Tham chiếu chéo PRD / Issue types / Components](#6-tham-chiếu-chéo-prd--issue-types--components)
-7. [Phụ lục A — FROZEN data-testid inventory](#phụ-lục-a--frozen-data-testid-inventory)
-8. [Phụ lục B — Checklist review contract](#phụ-lục-b--checklist-review-contract)
+7. [Quyết định nền (Foundational Decisions)](#7-quyết-định-nền-foundational-decisions)
+8. [Phụ lục A — FROZEN data-testid inventory](#phụ-lục-a--frozen-data-testid-inventory)
+9. [Phụ lục B — Checklist review contract](#phụ-lục-b--checklist-review-contract)
 
 ---
 
@@ -786,6 +787,200 @@ bibliography headings. **Component:** mới (S04). **State:** 4.7.
 
 ---
 
+# 7. Quyết định nền (Foundational Decisions)
+
+> Chốt tại **T02** (M005-S01) — 3 quyết định nền tảng ràng buộc mọi slice sau
+> (S02 flow/export, S03 explorer/evidence/resolution, S04 onboarding/song ngữ/
+> responsive). Mọi slice phải triển khai **theo đúng** các quyết định này; muốn
+> đổi phải sửa UI-SPEC trước (contract-first), không đổi code rồi mới ghi lại.
+
+## 7.1 i18n — typed dictionary hand-rolled (EN–VI)
+
+### 7.1.1 Quyết định
+
+- **Không dùng i18next** (hay bất kỳ thư viện i18n nào). Framework tự viết
+  (hand-rolled) tại `apps/web/src/i18n/` với **typed dictionary** — 2 bảng
+  khai báo `en` và `vi` cùng shape, `keyof typeof en === keyof typeof vi`
+  ép kiểu tại compile time.
+- **2 locale: EN (default) + VI**. PRD §54: UI V0.1 English; Vietnamese là
+  future localization bắt buộc — framework có sẵn từ đầu, nhưng không
+  over-engineer (không pluralization engine, không context, không ICU).
+- **Chỉ UI-layer strings đi qua i18n** — văn bản giao diện do component vẽ.
+- **Evidence / issue text giữ EN FROZEN** — không bao giờ dịch:
+  - `LintEvidence.code` và message (machine-readable, R012 — evidence là dữ
+    liệu engine, không phải UI copy);
+  - `Issue.message` từ engine (ví dụ "No matching reference");
+  - `describeWorkerError` message gốc + `error.name` (protocol, D021);
+  - **stage labels** (`PIPELINE_STAGES`: "Reading document"…): đây là contract
+    engine→UI (D025) và là chính giá trị testid `stage-{stage}` — giữ EN
+    literal, KHÔNG dịch; nếu sau này cần nhãn VI thì thêm label map riêng,
+    stage name gốc vẫn là identity không đổi;
+  - mọi giá trị dữ liệu hiển thị (issue id, confidence số, entryId…).
+- **Parity test bắt buộc** (chạy trong vitest, T04): mọi key tồn tại ở cả 2
+  locale; placeholder count khớp; không key thừa/thiếu — regression bất kỳ
+  khi nào sửa dictionary.
+- **Default locale = EN** — app render hiện tại không đổi hành vi gì (T04
+  verify bằng vitest + smoke e2e). Locale switch UI thô có ở T04; hoàn thiện
+  ở S04 (cài đặt ngôn ngữ, lưu preference).
+
+### 7.1.2 Rationale
+
+- PRD §54 yêu cầu UI EN ở V0.1 và VI là future localization: chọn hand-rolled
+  typed dict — không dependency, bundle nhỏ (offline-first §11), type-safe
+  (compile-time parity), dễ test parity bằng vitest thuần.
+- Evidence/issue text giữ EN vì là **dữ liệu engine** (R012 no-LLM, machine-
+  readable codes) — dịch chúng sẽ phá R012/byte-identical và làm e2e hiện tại
+  (assert message EN) vỡ. UI copy và engine output là 2 lớp riêng biệt.
+- i18next bị loại vì thêm dependency + runtime cho 2 locale đơn giản; typed
+  dict cho parity check tốt hơn (i18next type-safety yếu hơn với key parity
+  compile-time giữa các locale).
+
+### 7.1.3 Quy ước i18n key naming
+
+```text
+{surface}.{element}.{state|variant}      — key theo màn hình/component
+common.{element}.{variant}               — string dùng chung (badge, buttons)
+placeholder: {name}                      — interpolation: "Drop {name} here"
+```
+
+- **Surface** = màn hình/domain theo UI-SPEC: `drop`, `stages`, `report`,
+  `explorer`, `evidence`, `resolution`, `export`, `recovery`, `onboarding`,
+  `error`, `common`.
+- Lowercase, dot-separated, từ ghép dùng dấu gạch ngang (`-`): ví dụ
+  `report.citations-count`, `drop.invalid-file`.
+- **Không** chứa giá trị dữ liệu (id, count, severity) trong key — dùng
+  placeholder `{x}`; count/severity giữ số/giá trị ngoài string.
+- Placeholder đặt tên rõ nghĩa: `{name}`, `{label}`, `{count}`.
+
+Ví dụ mapping từ UI strings hiện tại (T04 phủ toàn bộ):
+
+| UI string hiện tại | Key EN | Placeholder |
+|---|---|---|
+| "Drop a .docx file here" | `drop.title` | — |
+| "or click to choose — analysis runs locally in your browser" | `drop.hint` | — |
+| "{name}" is not a .docx file. Choose a Word document saved as .docx. | `drop.invalid-file` | `{name}` |
+| "Drop to analyze" | `drop.dragging` | — |
+| "Ready — analysis runs locally in your browser" | `common.badge.ready` | — |
+| "Processing locally" | `common.badge.processing` | — |
+| "Processed locally — never left this device" | `common.badge.done` | — |
+| "Analysis stages" | `stages.title` | — |
+| "Resolve ambiguous citation" | `resolution.title` | — |
+| "Chosen" / "Choose" | `resolution.chosen` / `resolution.choose` | — |
+| "No references matched" | `evidence.no-refs` | — |
+| "No issues found." | `explorer.empty` | — |
+| "Export failed. Try again." (target S02) | `export.failure` | — |
+| "No candidates available." | `recovery.no-candidates` | — |
+
+> Stage labels, evidence messages, issue messages, error messages: **không có
+> key** — giữ EN literal (7.1.1).
+
+## 7.2 data-testid policy
+
+### 7.2.1 Quyết định
+
+- **GIỮ FROZEN contract testid hiện tại** (Phụ lục A — 23 pattern, 5 e2e
+  specs tham chiếu: `smoke.spec.ts`, `explorer.spec.ts`, `resolution.spec.ts`,
+  `export.spec.ts`, `perf.spec.ts`). Không rename, không xóa, không đổi format.
+- **Testid mới** thêm theo quy ước 7.2.3. Testid mới KHÔNG thay testid cũ
+  (thêm surface mới thì thêm testid mới, không đổi tên cái cũ).
+- **Rename testid cũ chỉ khi có lý do thật** (component bị tách/đổi cấu trúc
+  khiến tên cũ sai ngữ nghĩa) — và bắt buộc **migrate đồng bộ e2e trong cùng
+  thay đổi** (mọi spec tham chiếu testid đó), test guard `ui-spec.test.ts`
+  phản đối rename vô cớ bằng cách chính nó tham chiếu các tên FROZEN.
+- Testid là **automation contract** — chỉ dùng làm selector trong test
+  (vitest component / playwright e2e). **Không dùng testid làm styling hook**;
+  styling dùng class (7.3.4).
+
+### 7.2.2 Rationale
+
+- 5 e2e specs (smoke/explorer/resolution/export/perf) + hàng chục unit test
+  đang bám vào 23 testid hiện tại. Đổi tên vô cớ = tốn migrate + rủi ro vỡ
+  test không liên quan; FROZEN contract giữ integration closure của slice
+  (testid là giao diện ổn định giữa test và component).
+- Tách testid/class: testid phục vụ automation (ổn định, ngữ nghĩa test),
+  class phục vụ styling (thay đổi tự do khi refactor CSS) — không trộn.
+
+### 7.2.3 Quy ước testid naming (testid mới)
+
+```text
+static:   {surface}-{element}                 vd: export-error, onboarding-hero
+instance: {surface}-{element}-{id}            vd: issue-row-{id}
+id literal từ domain data, KHÔNG dùng index ngẫu nhiên
+```
+
+- Kebab-case, lowercase, không gạch dưới, không viết hoa.
+- `{surface}` = tên component/màn (đã có sẵn trong Phụ lục A: `drop-zone`,
+  `issue-row`, `evidence-*`, `resolution-*`, `recovery-*`, `export-*`,
+  `stage-*`, `severity-group-*`, `possible-ref-*`, `source-highlight`,
+  `processing-badge`, `report-summary`, `explorer`, `doc-view`, `error-panel`…).
+- `{id}` dùng **giá trị gốc từ dữ liệu**, không sinh số thứ tự: issue id
+  (`issue-row-CS004:0`), `entryId` (`possible-ref-r0`), `blockId`
+  (`recovery-candidate-doc-p3`), `code` (`evidence-code-no-entry`),
+  `stage` (`stage-running-checks`), `severity` (`severity-group-ERROR`).
+- Một element = một testid duy nhất; không 2 testid trên cùng element.
+- Testid mới phải đi kèm test dùng nó (không testid chết).
+
+Ví dụ testid mới dự kiến (đã tham chiếu trong spec): `export-error` (4.5),
+`onboarding-*` (5.9, S04).
+
+## 7.3 Styling — vanilla CSS + CSS custom properties
+
+### 7.3.1 Quyết định
+
+- **Vanilla CSS + CSS custom properties** — KHÔNG thêm UI framework (React
+  UI kit, MUI, Chakra…), KHÔNG Tailwind/utility-first, KHÔNG CSS-in-JS
+  (styled-components/emotion), KHÔNG state machine lib (xstate…).
+- Design tokens (§1) triển khai thành CSS custom properties trong
+  `apps/web/src/design-system.css` (T03), khai báo trên `:root`; component
+  **chỉ đọc token**, không hardcode giá trị (trừ ngoại lệ §1).
+- **Desktop-first responsive** (§2.1): thiết kế desktop trước, mobile là phái
+  sinh; media queries dùng token breakpoint (`--cs-bp-*`).
+- State machine hiện tại trong `App.tsx` (status string: idle/analyzing/done/
+  error + derived UI) giữ nguyên — đủ cho 4 trạng thái shell; không nâng cấp
+  lên lib.
+
+### 7.3.2 Rationale
+
+- Ứng dụng 1 màn shell + 1 màn explorer: dependency UI framework/Tailwind
+  thêm bundle + learning surface mà không mua lại gì — app.css hiện tại
+  (755 dòng, class ngữ nghĩa) đã phủ toàn bộ. CSS custom properties cho
+  theming (dark S04) và token consistency không cần build step.
+- Offline-first (PRD §11) + bundle nhỏ: không thêm runtime CSS/JS.
+- State machine lib là over-engineering cho 4 trạng thái tuyến tính + 1
+  generation counter chống race (T11) — logic hiện tại đã có e2e phủ.
+
+### 7.3.3 Quy ước token naming (nhắc lại §1 — contract)
+
+```text
+--cs-{category}-{name}[-{variant}]
+category: color | font | space | radius | shadow | z | bp (breakpoint)
+name:     ngữ nghĩa (bg, fg, border, accent, severity, size, weight…)
+variant:  trạng thái/bậc (hover, tint, sm, md, lg, 1..8…)
+```
+
+- Tên token phải trùng tên trong UI-SPEC §1 (mọi token §1 phải tồn tại trong
+  `design-system.css` và ngược lại — verify T03).
+- Theme dark (S04) override trên `[data-theme="dark"]`, không đổi component.
+- Breakpoint token: `--cs-bp-wide` `--cs-bp-narrow` `--cs-bp-tablet`
+  `--cs-bp-mobile` (giá trị §2.1) — media queries dùng giá trị token.
+
+### 7.3.4 Quy ước class naming (CSS)
+
+```text
+kebab-case, lowercase — theo hiện trạng app.css
+{surface}-{element}[-{state}]    vd: drop-zone, issue-row-selected, stage-done
+state class: {surface}-{state}    vd: drop-zone-dragging, issue-row-resolved
+```
+
+- Class = styling hook; trạng thái UI (selected/dragging/done/current/pending/
+  invalid) dùng class đi kèm, KHÔNG dùng testid (7.2.1).
+- Severity: `severity-{error|warning|ambiguous|info}` + `source-highlight-{severity}`
+  (đã có, giữ nguyên — §1.1.1).
+- E2E assert state bằng class khi cần (`toHaveClass` — smoke/explorer dùng
+  `stage-done`, `issue-row-selected`…), không thêm testid cho mục đích đó.
+
+---
+
 # Phụ lục A — FROZEN data-testid inventory
 
 Danh sách FACTUAL các data-testid hiện có (đọc từ source) — 5 e2e specs tham
@@ -836,4 +1031,4 @@ S02–S04. Mỗi mục có con trỏ tới section tương ứng:
 | 2 | Flow map phủ mọi transition (T1–T11) + mọi state kèm theo | §3 |
 | 3 | Mockup phủ mọi màn hình hiện có (9 component) + onboarding | §5 |
 | 4 | State inventory không thiếu error states: parse-failure, oversize, unsupported, worker error, export failure, time-budget | §4.8 |
-| 5 | 3 quyết định nền (i18n, data-testid policy, vanilla CSS/styling) được ghi | T02 (bổ sung section riêng) |
+| 5 | 3 quyết định nền (i18n, data-testid policy, vanilla CSS/styling) được ghi | §7 (T02) |
