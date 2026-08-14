@@ -16,6 +16,7 @@
 import type { AcademicDocument, LintIssue } from '@citesync/core';
 import { possibleReferencesForIssue, referenceLabel } from '../explorer/explorer';
 import type { ReferenceEntry } from '../explorer/explorer';
+import { useI18n } from '../i18n/useI18n';
 
 const MAX_BLOCK_LABEL = 72;
 const MAX_REFERENCE_LABEL = 160;
@@ -44,10 +45,11 @@ export interface EvidencePanelProps {
 }
 
 export default function EvidencePanel({ issue, doc }: EvidencePanelProps) {
+  const { t } = useI18n();
   const references = possibleReferencesForIssue(doc, issue);
   return (
-    <section className="evidence-panel" data-testid="evidence-panel" aria-label="Issue evidence">
-      <h2>Evidence</h2>
+    <section className="evidence-panel" data-testid="evidence-panel" aria-label={t('evidence.aria-label')}>
+      <h2>{t('evidence.title')}</h2>
       <p className="evidence-issue">
         <code className="evidence-issue-id">{issue.id}</code>
         <span className="evidence-issue-message">{issue.message}</span>
@@ -63,9 +65,9 @@ export default function EvidencePanel({ issue, doc }: EvidencePanelProps) {
           </li>
         ))}
       </ul>
-      <h3 className="evidence-references-heading">Possible references</h3>
+      <h3 className="evidence-references-heading">{t('evidence.possible-references')}</h3>
       {references.length === 0 ? (
-        <p className="evidence-empty-refs">No references matched</p>
+        <p className="evidence-empty-refs">{t('evidence.no-refs')}</p>
       ) : (
         <ul className="reference-list">
           {references.map((entry) => (

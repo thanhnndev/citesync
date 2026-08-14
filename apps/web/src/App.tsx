@@ -46,19 +46,29 @@ import { resolutionCandidatesForIssue } from './explorer/explorer';
 import { applyResolutions } from './resolutions/resolutions';
 import type { ResolutionsView } from './resolutions/resolutions';
 import { describeWorkerError } from './worker/protocol';
+import { useI18n } from './i18n/useI18n';
+import type { I18nKey } from './i18n/dictionary';
+import type { Locale } from './i18n/dictionary';
 import './design-system.css';
 import './app.css';
 
-/** Badge text per state — the badge element ALWAYS exists, text drives e2e. */
-const BADGE_TEXT: Record<AnalyzeStatus, string> = {
-  idle: 'Ready — analysis runs locally in your browser',
-  analyzing: 'Processing locally',
-  done: 'Processed locally — never left this device',
-  error: 'Analysis runs locally in your browser',
+/** Badge key per state — the badge element ALWAYS exists, text drives e2e. */
+const BADGE_KEY: Record<AnalyzeStatus, I18nKey> = {
+  idle: 'common.badge.ready',
+  analyzing: 'common.badge.processing',
+  done: 'common.badge.done',
+  error: 'common.badge.error',
 };
+
+/** Locale switch (T04 — thô): the two supported locales, EN default. */
+const LOCALE_OPTIONS: readonly { value: Locale; label: string }[] = [
+  { value: 'en', label: 'EN' },
+  { value: 'vi', label: 'VI' },
+];
 
 export default function App() {
   const { state, analyze, rerun } = useAnalyze();
+  const { t, locale, setLocale } = useI18n();
   const [selectedIssueId, setSelectedIssueId] = useState<string | undefined>(undefined);
 
   // R013 (S03-T2/T3): file-scoped session resolutions — the hook reads ONLY
@@ -100,9 +110,24 @@ export default function App() {
     <main className="app-shell">
       <header className="app-header">
         <h1>CiteSync</h1>
-        <p className="processing-badge" data-testid="processing-badge" role="status">
-          {BADGE_TEXT[state.status]}
-        </p>
+        <div className="app-header-actions">
+          <p className="processing-badge" data-testid="processing-badge" role="status">
+            {t(BADGE_KEY[state.status])}
+          </p>
+          <div className="locale-switch" role="group" aria-label={t('common.language')}>
+            {LOCALE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className="locale-switch-option"
+                aria-pressed={locale === option.value}
+                onClick={() => setLocale(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </header>
 
       <DropZone onAnalyze={analyze} />

@@ -11,6 +11,7 @@
 
 import { RULE_SEVERITIES } from '@citesync/core';
 import type { CliReport, RuleSeverity } from '@citesync/core';
+import { useI18n } from '../i18n/useI18n';
 
 const SEVERITY_CLASS: Record<RuleSeverity, string> = {
   ERROR: 'severity-error',
@@ -25,9 +26,10 @@ export interface ReportSummaryProps {
 }
 
 export default function ReportSummary({ report }: ReportSummaryProps) {
+  const { t } = useI18n();
   return (
-    <section className="report-summary" data-testid="report-summary" aria-label="Report summary">
-      <h2>Report</h2>
+    <section className="report-summary" data-testid="report-summary" aria-label={t('report.aria-label')}>
+      <h2>{t('report.title')}</h2>
       <ul className="severity-counts">
         {RULE_SEVERITIES.map((severity) => (
           <li key={severity} className={`severity-count ${SEVERITY_CLASS[severity]}`}>
@@ -37,8 +39,11 @@ export default function ReportSummary({ report }: ReportSummaryProps) {
         ))}
       </ul>
       <p className="report-meta">
-        {report.meta.citations} citations · {report.meta.references} references ·{' '}
-        {report.meta.ruleIds.length} rules applied
+        {t('report.meta-count', {
+          citations: report.meta.citations,
+          references: report.meta.references,
+          rules: report.meta.ruleIds.length,
+        })}
       </p>
     </section>
   );

@@ -16,6 +16,7 @@
 
 import { PIPELINE_STAGES } from '@citesync/core';
 import type { PipelineStage } from '@citesync/core';
+import { useI18n } from '../i18n/useI18n';
 
 /** Checklist state of one stage. */
 export type StageStatus = 'done' | 'current' | 'pending';
@@ -40,7 +41,14 @@ export function stageStatus(
   return 'pending';
 }
 
-/** Friendly display labels for the five stages (internal names stay visible). */
+/**
+ * Friendly display labels for the five stages (internal names stay visible).
+ *
+ * FROZEN EN by decision (UI-SPEC §7.1.1): stage labels are the engine→UI
+ * contract (D025) and the visible twin of the `stage-{stage}` testid — they
+ * do NOT go through i18n. A future VI label map would add a separate
+ * mapping keyed by the unchanged stage name; the identity never changes.
+ */
 const STAGE_LABELS: Record<PipelineStage, string> = {
   'reading-document': 'Reading document',
   'detecting-bibliography': 'Detecting bibliography',
@@ -59,9 +67,10 @@ export interface StageChecklistProps {
 }
 
 export default function StageChecklist({ stages, analyzing }: StageChecklistProps) {
+  const { t } = useI18n();
   return (
-    <section className="stage-checklist" aria-label="Analysis stages">
-      <h2>Analysis stages</h2>
+    <section className="stage-checklist" aria-label={t('stages.title')}>
+      <h2>{t('stages.title')}</h2>
       <ol className="stage-list">
         {PIPELINE_STAGES.map((stage) => {
           const status = stageStatus(stage, stages, analyzing);

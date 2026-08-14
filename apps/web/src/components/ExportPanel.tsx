@@ -26,6 +26,7 @@ import type { CliReport } from '@citesync/core';
 import { saveTextFile } from '../export/download';
 import { exportHtmlFilename, exportJsonFilename } from '../export/filenames';
 import { buildHtmlReport } from '../export/html';
+import { useI18n } from '../i18n/useI18n';
 
 export interface ExportPanelProps {
   /** The canonical CLI-compatible report (D024) from the done envelope. */
@@ -33,19 +34,20 @@ export interface ExportPanelProps {
 }
 
 export default function ExportPanel({ report }: ExportPanelProps) {
+  const { t } = useI18n();
   return (
     <section
       className="export-panel"
       data-testid="export-panel"
-      aria-label="Export report"
+      aria-label={t('export.aria-label')}
     >
-      <h2>Export</h2>
+      <h2>{t('export.title')}</h2>
       <div className="export-actions">
         <button
           type="button"
           className="export-button"
           data-testid="export-json"
-          aria-label="Export report as JSON"
+          aria-label={t('export.json-aria-label')}
           onClick={() =>
             saveTextFile(
               serializeReport(report),
@@ -54,13 +56,13 @@ export default function ExportPanel({ report }: ExportPanelProps) {
             )
           }
         >
-          Download JSON report
+          {t('export.json')}
         </button>
         <button
           type="button"
           className="export-button"
           data-testid="export-html"
-          aria-label="Export report as HTML"
+          aria-label={t('export.html-aria-label')}
           onClick={() =>
             saveTextFile(
               buildHtmlReport(report),
@@ -69,7 +71,7 @@ export default function ExportPanel({ report }: ExportPanelProps) {
             )
           }
         >
-          Download HTML report
+          {t('export.html')}
         </button>
       </div>
     </section>

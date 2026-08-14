@@ -20,6 +20,7 @@
 
 import { referenceLabel } from '../explorer/explorer';
 import type { ReferenceEntry } from '../explorer/explorer';
+import { useI18n } from '../i18n/useI18n';
 
 export interface ResolutionPickerProps {
   /** The region-joined matchMap citationId the choice keys against (SessionResolution key). */
@@ -38,18 +39,16 @@ export default function ResolutionPicker({
   chosenEntryId,
   onChoose,
 }: ResolutionPickerProps) {
+  const { t } = useI18n();
   return (
     <section
       className="resolution-picker"
       data-testid="resolution-picker"
       data-citation-id={citationId}
-      aria-label="Resolve ambiguous citation"
+      aria-label={t('resolution.aria-label')}
     >
-      <h2>Resolve ambiguity</h2>
-      <p className="resolution-picker-hint">
-        Which reference is this citation pointing at? Your choice stays in this
-        session only — the document is never modified.
-      </p>
+      <h2>{t('resolution.title')}</h2>
+      <p className="resolution-picker-hint">{t('resolution.hint')}</p>
       <ul className="resolution-candidates">
         {candidates.map((entry) => {
           const chosen = entry.id === chosenEntryId;
@@ -67,7 +66,7 @@ export default function ResolutionPicker({
                 aria-pressed={chosen}
                 onClick={() => onChoose(entry.id)}
               >
-                {chosen ? 'Chosen' : 'Choose'}
+                {chosen ? t('resolution.chosen') : t('resolution.choose')}
               </button>
             </li>
           );

@@ -14,6 +14,7 @@
  */
 
 import { useRef, useState } from 'react';
+import { useI18n } from '../i18n/useI18n';
 
 export interface DropZoneProps {
   /** Called with the raw file bytes + name once a .docx passes validation. */
@@ -21,9 +22,12 @@ export interface DropZoneProps {
 }
 
 export default function DropZone({ onAnalyze }: DropZoneProps) {
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
-  const [invalidFile, setInvalidFile] = useState<string | null>(null);
+  // The rejected file NAME is kept (not the formatted message) so a locale
+  // switch re-renders the message in the new language.
+  const [invalidFileName, setInvalidFileName] = useState<string | null>(null);
   // DragEnter fires on every child boundary — count depth so the highlight
   // only clears once the pointer truly leaves the zone.
   const dragDepth = useRef(0);
@@ -31,10 +35,10 @@ export default function DropZone({ onAnalyze }: DropZoneProps) {
   function handleFile(file: File | undefined): void {
     if (file === undefined) return;
     if (!file.name.toLowerCase().endsWith('.docx')) {
-      setInvalidFile(`"${file.name}" is not a .docx file. Choose a Word document saved as .docx.`);
+      setInvalidFileName(file.name);
       return;
     }
-    setInvalidFile(null);
+    setInvalidFileName(null);
     // File.arrayBuffer() resolves with an ArrayBuffer — pass the raw bytes
     // (transferable) to the worker client; the UI state machine takes over.
     void file.arrayBuffer().then((buffer) => onAnalyze(buffer, file.name));
@@ -71,16 +75,18 @@ export default function DropZone({ onAnalyze }: DropZoneProps) {
         accept=".docx"
         data-testid="file-input"
         className="file-input"
-        aria-label="Choose a .docx file to analyze"
+        aria-label={t('drop.choose-label')}
         onChange={(event) => handleFile(event.target.files?.[0])}
       />
       <p className="drop-zone-title">
-        {dragging ? 'Drop to analyze' : 'Drop a .docx file here'}
+        {dragging ? t('drop.dragging') : t('drop.title')}
       </p>
-      <p className="drop-zone-hint">
-        or click to choose — analysis runs locally in your browser
-      </p>
-      {invalidFile !== null && <p className="drop-zone-invalid">{invalidFile}</p>}
+      <p className="drop-zone-hint">{t('drop.hint')}</p>
+      {invalidFileName !== null && (
+        <p className="drop-zone-invalid" role="alert">
+          {t('drop.invalid-file', { name: invalidFileName })}
+        </p>
+      )}
     </section>
   );
 }

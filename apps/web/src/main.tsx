@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { LocaleProvider } from './i18n/index';
 
 const rootEl = document.getElementById('root');
 if (rootEl === null) {
@@ -9,6 +10,9 @@ if (rootEl === null) {
 
 createRoot(rootEl).render(
   <StrictMode>
-    <App />
+    {/* M005-S01-T4: default locale EN — render behavior-identical (§7.1.1). */}
+    <LocaleProvider>
+      <App />
+    </LocaleProvider>
   </StrictMode>,
 );

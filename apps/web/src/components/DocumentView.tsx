@@ -18,6 +18,7 @@
 import { useEffect, useRef } from 'react';
 import type { AcademicDocument, LintIssue } from '@citesync/core';
 import { highlightParts, sourceSpanForIssue } from '../explorer/explorer';
+import { useI18n } from '../i18n/useI18n';
 
 /** Footnote/endnote blocks are note parts — excluded from the reading view. */
 function isBodyBlock(block: AcademicDocument['blocks'][number]): boolean {
@@ -41,6 +42,7 @@ export interface DocumentViewProps {
 }
 
 export default function DocumentView({ doc, selectedIssue, onSelect }: DocumentViewProps) {
+  const { t } = useI18n();
   const blocks = doc.blocks.filter(isBodyBlock);
   const blockRefs = useRef(new Map<string, HTMLElement>());
 
@@ -57,10 +59,10 @@ export default function DocumentView({ doc, selectedIssue, onSelect }: DocumentV
   }, [highlightBlockId]);
 
   return (
-    <section className="doc-view" data-testid="doc-view" aria-label="Document source">
-      <h2>Document</h2>
+    <section className="doc-view" data-testid="doc-view" aria-label={t('explorer.doc-aria-label')}>
+      <h2>{t('explorer.doc-title')}</h2>
       {blocks.length === 0 ? (
-        <p className="doc-view-empty">No document content.</p>
+        <p className="doc-view-empty">{t('explorer.doc-empty')}</p>
       ) : (
         <div className="doc-view-scroll">
           {blocks.map((block) => {

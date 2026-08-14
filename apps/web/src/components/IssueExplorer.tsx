@@ -25,6 +25,7 @@
 import type { LintIssue, RuleSeverity } from '@citesync/core';
 import { groupIssuesBySeverity, referenceLabel } from '../explorer/explorer';
 import type { ResolvedIssue } from '../resolutions/resolutions';
+import { useI18n } from '../i18n/useI18n';
 
 const SEVERITY_CLASS: Record<LintIssue['severity'], string> = {
   ERROR: 'severity-error',
@@ -53,12 +54,13 @@ export default function IssueExplorer({
   resolvedByIssue,
   resolvedCounts,
 }: IssueExplorerProps) {
+  const { t } = useI18n();
   const groups = groupIssuesBySeverity(issues);
   return (
-    <section className="issue-explorer" data-testid="explorer" aria-label="Issues by severity">
-      <h2>Issues</h2>
+    <section className="issue-explorer" data-testid="explorer" aria-label={t('explorer.aria-label')}>
+      <h2>{t('explorer.title')}</h2>
       {groups.length === 0 ? (
-        <p className="issue-explorer-empty">No issues found.</p>
+        <p className="issue-explorer-empty">{t('explorer.empty')}</p>
       ) : (
         groups.map((group) => {
           const resolvedInGroup = resolvedCounts?.[group.severity] ?? 0;
@@ -72,7 +74,9 @@ export default function IssueExplorer({
                 <span className="severity-group-name">{group.severity}</span>
                 <span className="severity-group-count">{group.issues.length}</span>
                 {resolvedInGroup > 0 && (
-                  <span className="severity-group-resolved">{resolvedInGroup} resolved</span>
+                  <span className="severity-group-resolved">
+                    {t('explorer.resolved-count', { count: resolvedInGroup })}
+                  </span>
                 )}
               </h3>
               <ul className="issue-list">
@@ -97,7 +101,9 @@ export default function IssueExplorer({
                         <span className="issue-row-message">{issue.message}</span>
                         {resolved !== undefined && (
                           <span className="issue-row-resolved-chip">
-                            Resolved → {referenceLabel(resolved.chosenEntry)}
+                            {t('explorer.resolved-chip', {
+                              label: referenceLabel(resolved.chosenEntry),
+                            })}
                           </span>
                         )}
                       </button>
