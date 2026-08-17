@@ -1,3 +1,0 @@
-- Prefers communicating in Vietnamese (with English command shorthand). Confidence: 0.9
-- Uses direct shell commands for git operations rather than GUI tools or high-level abstractions. Confidence: 0.8
-- Wants git hygiene checks (unmerged branches, worktree status relative to main) as part of routine workflow. Confidence: 0.7
