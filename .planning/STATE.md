@@ -1,3 +1,18 @@
+---
+gsd_state_version: 1.0
+milestone: v0.2
+milestone_name: — Structured Academic Documents
+status: unknown
+stopped_at: Phase 01 context gathered
+last_updated: "2026-08-17T08:20:33.787Z"
+progress:
+  total_phases: 6
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+---
+
 # STATE.md — CiteSync
 
 ## Current Status
@@ -9,6 +24,7 @@
 ## What Exists
 
 ### Monorepo Structure
+
 - `apps/web/` — React web application
 - `packages/` — Core packages (core, docx, citations, references, matcher, rules, report, cli)
 - `fixtures/` — Test fixtures (author-date, numeric)
@@ -16,6 +32,7 @@
 - `docs/` — PRD + UI-SPEC
 
 ### Implemented Components (9)
+
 1. `DropZone.tsx` — File drop with validation
 2. `StageChecklist.tsx` — 5-stage pipeline progress
 3. `ReportSummary.tsx` — Severity counts + meta
@@ -27,11 +44,13 @@
 9. `BibliographyRecoveryPanel.tsx` — Below-threshold recovery
 
 ### Test Infrastructure
+
 - 5 e2e specs (smoke, explorer, resolution, export, perf)
 - Vitest configuration
 - FROZEN data-testid contract (23 patterns)
 
 ### Current Styling
+
 - Tailwind CSS v4 integrated via `@tailwindcss/vite` plugin
 - `design-system.css` — all --cs-* design tokens (CSS custom properties)
 - `app.css` — @theme mapping + base styles + motion patterns
@@ -57,6 +76,7 @@
 ## Decisions Locked
 
 See `.planning/intel/decisions.md` for full list. Key locks:
+
 - Tailwind CSS v4 (overrides PRD §94 vanilla CSS)
 - Hand-rolled typed i18n (no i18next)
 - FROZEN data-testid (23 patterns, 5 e2e specs)
@@ -68,3 +88,9 @@ See `.planning/intel/decisions.md` for full list. Key locks:
 - UI-SPEC: `docs/UI-SPEC.md`
 - Intel: `.planning/intel/SYNTHESIS.md`
 - Conflicts: `.planning/INGEST-CONFLICTS.md`
+
+## Session
+
+**Last session:** 2026-08-17T08:20:33.783Z
+**Stopped at:** Phase 01 context gathered
+**Resume file:** .planning/phases/01-foundation-core-engine/01-CONTEXT.md
