@@ -14,6 +14,9 @@
  * the chosen row stays highlighted and the stored resolution is replaced,
  * never duplicated. All data is matcher data (R012 — NEVER LLM).
  *
+ * M005-S02-T4 (Tailwind v4): redesign per UI-SPEC mockup 5.6 — amber border +
+ * chosen state. testids + logic FROZEN.
+ *
  * data-testid contract (FROZEN for T5 e2e): resolution-picker,
  * resolution-candidate-{entryId}, resolution-choose-{entryId}.
  */
@@ -42,26 +45,38 @@ export default function ResolutionPicker({
   const { t } = useI18n();
   return (
     <section
-      className="resolution-picker"
+      className="resolution-picker min-w-0 rounded-lg border border-severity-ambiguous bg-surface p-4 shadow-sm"
       data-testid="resolution-picker"
       data-citation-id={citationId}
       aria-label={t('resolution.aria-label')}
     >
-      <h2>{t('resolution.title')}</h2>
-      <p className="resolution-picker-hint">{t('resolution.hint')}</p>
-      <ul className="resolution-candidates">
+      <h2 className="m-0 mb-1 font-display text-lg font-semibold text-severity-ambiguous">
+        {t('resolution.title')}
+      </h2>
+      <p className="resolution-picker-hint m-0 mb-3 text-sm text-muted">{t('resolution.hint')}</p>
+      <ul className="resolution-candidates m-0 flex list-none flex-col gap-2 p-0">
         {candidates.map((entry) => {
           const chosen = entry.id === chosenEntryId;
           return (
             <li
               key={entry.id}
-              className={`resolution-candidate${chosen ? ' resolution-candidate-chosen' : ''}`}
+              className={`resolution-candidate flex items-center justify-between gap-3 rounded-md border border-border bg-subtle p-3 ${
+                chosen
+                  ? 'resolution-candidate-chosen border-severity-ambiguous bg-severity-ambiguous-tint'
+                  : ''
+              }`}
               data-testid={`resolution-candidate-${entry.id}`}
             >
-              <span className="resolution-candidate-label">{referenceLabel(entry)}</span>
+              <span className="resolution-candidate-label min-w-0 text-sm leading-normal text-ink">
+                {referenceLabel(entry)}
+              </span>
               <button
                 type="button"
-                className={`resolution-choose${chosen ? ' resolution-choose-chosen' : ''}`}
+                className={`resolution-choose shrink-0 cursor-pointer rounded-md border border-severity-ambiguous px-3 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-severity-ambiguous ${
+                  chosen
+                    ? 'resolution-choose-chosen bg-severity-ambiguous text-inverse'
+                    : 'bg-surface text-severity-ambiguous hover:bg-severity-ambiguous hover:text-inverse'
+                }`}
                 data-testid={`resolution-choose-${entry.id}`}
                 aria-pressed={chosen}
                 onClick={() => onChoose(entry.id)}

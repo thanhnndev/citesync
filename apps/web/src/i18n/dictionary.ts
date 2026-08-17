@@ -29,6 +29,7 @@ export const en = {
   'common.badge.done': 'Processed locally — never left this device',
   'common.badge.error': 'Analysis runs locally in your browser',
   'common.language': 'Language',
+  'common.new-document': 'New document',
   'common.locale.en': 'English',
   'common.locale.vi': 'Vietnamese',
   // -------------------------------------------------------------------- drop
@@ -39,10 +40,17 @@ export const en = {
   'drop.choose-label': 'Choose a .docx file to analyze',
   // ------------------------------------------------------------------ stages
   'stages.title': 'Analysis stages',
+  // --------------------------------------------------------------- onboarding
+  // M005-S02-T4: idle hero (UI-SPEC mockup 5.1/5.9 — PRD §58 hero, §59 proof).
+  'onboarding.hero-title': 'ESLint for your citations.',
+  'onboarding.hero-subtitle':
+    'Find missing, unused, and inconsistent references before you submit — all locally in your browser.',
   // ------------------------------------------------------------------ report
   'report.title': 'Report',
   'report.aria-label': 'Report summary',
   'report.meta-count': '{citations} citations · {references} references · {rules} rules applied',
+  // M005-S02-T3: zero-issue success message (UI-SPEC §4.3 — polish).
+  'report.zero-issue': 'Citation consistency looks good.',
   // ---------------------------------------------------------------- explorer
   'explorer.title': 'Issues',
   'explorer.aria-label': 'Issues by severity',
@@ -73,6 +81,22 @@ export const en = {
   'export.html': 'Download HTML report',
   'export.html-aria-label': 'Export report as HTML',
   'export.failure': 'Export failed. Try again.',
+  // ------------------------------------------------------------------ error
+  // M005-S02-T3: error guidance layer — i18n UI copy rendered UNDER the
+  // FROZEN describeWorkerError text (UI-SPEC §3.3 — guidance is a separate
+  // layer; describeWorkerError + err.name never i18n'd). No placeholders.
+  'error.guidance.not-docx':
+    'Re-export your document from Word or Google Docs as .docx, then try again.',
+  'error.guidance.oversize':
+    'Reduce the file size or split the document into smaller parts, then try again.',
+  'error.guidance.parse-failure':
+    'The file may be corrupted. Re-save it from your word processor and analyze again.',
+  'error.guidance.unsupported':
+    'Remove encryption or re-save with standard compression, then try again.',
+  'error.guidance.time-budget':
+    'Try a smaller document, or close other tabs and try again.',
+  'error.guidance.generic':
+    'Reload the page and try again. If it keeps failing, your document may not be supported yet.',
   // ---------------------------------------------------------------- recovery
   'recovery.aria-label': 'Bibliography recovery',
   'recovery.title': 'Select the bibliography section',
@@ -96,6 +120,7 @@ export const vi = {
   'common.badge.done': 'Đã xử lý trên máy — chưa bao giờ rời khỏi thiết bị của bạn',
   'common.badge.error': 'Phân tích chạy hoàn toàn trên trình duyệt của bạn',
   'common.language': 'Ngôn ngữ',
+  'common.new-document': 'Tài liệu mới',
   'common.locale.en': 'Tiếng Anh',
   'common.locale.vi': 'Tiếng Việt',
   // -------------------------------------------------------------------- drop
@@ -106,10 +131,15 @@ export const vi = {
   'drop.choose-label': 'Chọn tệp .docx để phân tích',
   // ------------------------------------------------------------------ stages
   'stages.title': 'Các bước phân tích',
+  // --------------------------------------------------------------- onboarding
+  'onboarding.hero-title': 'ESLint cho trích dẫn của bạn.',
+  'onboarding.hero-subtitle':
+    'Phát hiện tham chiếu thiếu, thừa và không nhất quán trước khi nộp — hoàn toàn trên trình duyệt của bạn.',
   // ------------------------------------------------------------------ report
   'report.title': 'Báo cáo',
   'report.aria-label': 'Tóm tắt báo cáo',
   'report.meta-count': '{citations} trích dẫn · {references} tham chiếu · {rules} quy tắc đã áp dụng',
+  'report.zero-issue': 'Tính nhất quán trích dẫn trông ổn.',
   // ---------------------------------------------------------------- explorer
   'explorer.title': 'Vấn đề',
   'explorer.aria-label': 'Vấn đề theo mức độ',
@@ -139,6 +169,19 @@ export const vi = {
   'export.html': 'Tải báo cáo HTML',
   'export.html-aria-label': 'Xuất báo cáo dạng HTML',
   'export.failure': 'Xuất thất bại. Hãy thử lại.',
+  // ------------------------------------------------------------------ error
+  'error.guidance.not-docx':
+    'Hãy xuất lại tài liệu từ Word hoặc Google Docs dưới dạng .docx, rồi thử lại.',
+  'error.guidance.oversize':
+    'Hãy giảm dung lượng tệp hoặc chia tài liệu thành nhiều phần nhỏ hơn, rồi thử lại.',
+  'error.guidance.parse-failure':
+    'Tệp có thể đã bị hỏng. Hãy lưu lại từ trình soạn thảo và phân tích lại.',
+  'error.guidance.unsupported':
+    'Hãy bỏ mã hóa hoặc lưu lại với nén chuẩn, rồi thử lại.',
+  'error.guidance.time-budget':
+    'Hãy thử tệp nhỏ hơn, hoặc đóng các tab khác và thử lại.',
+  'error.guidance.generic':
+    'Hãy tải lại trang và thử lại. Nếu vẫn lỗi, tài liệu của bạn có thể chưa được hỗ trợ.',
   // ---------------------------------------------------------------- recovery
   'recovery.aria-label': 'Khôi phục danh mục tài liệu tham khảo',
   'recovery.title': 'Chọn mục danh mục tài liệu tham khảo',

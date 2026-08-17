@@ -11,6 +11,9 @@
  * `rerun({ bibliographyBlockIds: [id] })` (the T3 recovery seam). All labels
  * are deterministic — no LLM anywhere (R012).
  *
+ * M005-S02-T4 (Tailwind v4): redesign per UI-SPEC mockup 5.8 — candidate
+ * cards + confidence mono + accent action. testids + logic FROZEN.
+ *
  * data-testid contract (FROZEN for T6 e2e): recovery-panel,
  * recovery-candidate-{blockId}, recovery-use-{blockId}.
  */
@@ -53,27 +56,41 @@ export default function BibliographyRecoveryPanel({
   if (bibliography.outcome !== 'below-threshold') return null;
   const candidates = bibliography.candidates ?? [];
   return (
-    <section className="recovery-panel" data-testid="recovery-panel" aria-label={t('recovery.aria-label')}>
-      <h2>{t('recovery.title')}</h2>
-      <p className="recovery-explanation">{t('recovery.explanation')}</p>
+    <section
+      className="recovery-panel rounded-lg border border-border bg-surface p-5 shadow-sm"
+      data-testid="recovery-panel"
+      aria-label={t('recovery.aria-label')}
+    >
+      <h2 className="m-0 mb-2 font-display text-lg font-semibold text-ink">
+        {t('recovery.title')}
+      </h2>
+      <p className="recovery-explanation m-0 mb-4 text-sm text-muted">
+        {t('recovery.explanation')}
+      </p>
       {candidates.length === 0 ? (
-        <p className="recovery-empty">{t('recovery.no-candidates')}</p>
+        <p className="recovery-empty m-0 text-sm text-muted">{t('recovery.no-candidates')}</p>
       ) : (
-        <ul className="recovery-list">
+        <ul className="recovery-list m-0 flex list-none flex-col gap-2 p-0">
           {candidates.map((candidate) => (
             <li
               key={candidate.blockId}
-              className="recovery-candidate"
+              className="recovery-candidate flex items-center justify-between gap-3 rounded-md border border-border bg-subtle p-3"
               data-testid={`recovery-candidate-${candidate.blockId}`}
             >
-              <div className="recovery-candidate-main">
-                <span className="recovery-heading">{candidate.heading}</span>
-                <span className="recovery-type">{t(HEADING_TYPE_KEY[candidate.headingType])}</span>
-                <span className="recovery-confidence">{candidate.confidence.toFixed(2)}</span>
+              <div className="recovery-candidate-main flex min-w-0 flex-col gap-1">
+                <span className="recovery-heading text-sm font-semibold text-ink">
+                  {candidate.heading}
+                </span>
+                <span className="recovery-type flex items-center gap-2 text-xs text-muted">
+                  {t(HEADING_TYPE_KEY[candidate.headingType])}
+                  <span className="recovery-confidence font-mono tabular-nums text-severity-ambiguous">
+                    {candidate.confidence.toFixed(2)}
+                  </span>
+                </span>
               </div>
               <button
                 type="button"
-                className="recovery-use"
+                className="recovery-use shrink-0 cursor-pointer rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-inverse transition-colors duration-150 hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 data-testid={`recovery-use-${candidate.blockId}`}
                 onClick={() => onUseSection(candidate.blockId)}
               >

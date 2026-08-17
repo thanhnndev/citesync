@@ -923,29 +923,42 @@ id literal từ domain data, KHÔNG dùng index ngẫu nhiên
 Ví dụ testid mới dự kiến (đã tham chiếu trong spec): `export-error` (4.5),
 `onboarding-*` (5.9, S04).
 
-## 7.3 Styling — vanilla CSS + CSS custom properties
+## 7.3 Styling — Tailwind CSS v4 + CSS custom properties (M005-S02 override)
+
+> **M005-S02 (user directive):** §7.3 thay vanilla CSS bằng **Tailwind CSS v4**
+> (CSS-first `@theme`, không cần tailwind.config.js). Mọi thứ khác giữ nguyên:
+> design tokens vẫn là single source trong `design-system.css` (§1); @theme
+> chỉ MAP namespace utility (--color-*, --font-*, --radius-*, --shadow-*, --z-*)
+> sang --cs-* token. Font VI-capable (Fraunces / Be Vietnam Pro / JetBrains
+> Mono) bundle local qua @fontsource — offline-safe (PRD §11, không font CDN).
 
 ### 7.3.1 Quyết định
 
-- **Vanilla CSS + CSS custom properties** — KHÔNG thêm UI framework (React
-  UI kit, MUI, Chakra…), KHÔNG Tailwind/utility-first, KHÔNG CSS-in-JS
-  (styled-components/emotion), KHÔNG state machine lib (xstate…).
+- **Tailwind CSS v4 (CSS-first)** — utility-first; KHÔNG thêm UI framework
+  (React UI kit, MUI, Chakra…), KHÔNG CSS-in-JS (styled-components/emotion),
+  KHÔNG state machine lib (xstate…). Cài `tailwindcss` + `@tailwindcss/vite`;
+  `@import "tailwindcss"` trong `app.css`; config qua `@theme` directive
+  (không tailwind.config.js).
 - Design tokens (§1) triển khai thành CSS custom properties trong
-  `apps/web/src/design-system.css` (T03), khai báo trên `:root`; component
-  **chỉ đọc token**, không hardcode giá trị (trừ ngoại lệ §1).
-- **Desktop-first responsive** (§2.1): thiết kế desktop trước, mobile là phái
-  sinh; media queries dùng token breakpoint (`--cs-bp-*`).
+  `apps/web/src/design-system.css` (T03), khai báo trên `:root`; `@theme`
+  trong `app.css` map `--color-*`/`--font-*`/`--radius-*`/`--shadow-*`/`--z-*`
+  → `--cs-*`; component **chỉ dùng utility + token**, không hardcode giá trị
+  (trừ ngoại lệ §1).
+- **Desktop-first responsive** (§2.1): breakpoint Tailwind mặc định dùng cho
+  grid/layout (md=768px khớp --cs-bp-narrow); mobile là phái sinh.
 - State machine hiện tại trong `App.tsx` (status string: idle/analyzing/done/
   error + derived UI) giữ nguyên — đủ cho 4 trạng thái shell; không nâng cấp
   lên lib.
 
 ### 7.3.2 Rationale
 
-- Ứng dụng 1 màn shell + 1 màn explorer: dependency UI framework/Tailwind
-  thêm bundle + learning surface mà không mua lại gì — app.css hiện tại
-  (755 dòng, class ngữ nghĩa) đã phủ toàn bộ. CSS custom properties cho
-  theming (dark S04) và token consistency không cần build step.
-- Offline-first (PRD §11) + bundle nhỏ: không thêm runtime CSS/JS.
+- **User directive M005-S02**: đại tu toàn bộ UI/UX theo design mới — Tailwind
+  v4 cho phép iterate nhanh + nhất quán utility-first, giảm app.css component
+  classes 796 dòng xuống còn shell base + @theme map.
+- Ứng dụng 1 màn shell + 1 màn explorer: Tailwind v4 zero-runtime (compiled
+  CSS, purge theo source scan), bundle vẫn nhỏ — không thêm runtime CSS/JS.
+- Offline-first (PRD §11): font qua @fontsource (woff2 local) + workbox
+  globPatterns thêm woff2 — không gọi font CDN khi build/runtime.
 - State machine lib là over-engineering cho 4 trạng thái tuyến tính + 1
   generation counter chống race (T11) — logic hiện tại đã có e2e phủ.
 
@@ -962,18 +975,20 @@ variant:  trạng thái/bậc (hover, tint, sm, md, lg, 1..8…)
   `design-system.css` và ngược lại — verify T03).
 - Theme dark (S04) override trên `[data-theme="dark"]`, không đổi component.
 - Breakpoint token: `--cs-bp-wide` `--cs-bp-narrow` `--cs-bp-tablet`
-  `--cs-bp-mobile` (giá trị §2.1) — media queries dùng giá trị token.
+  `--cs-bp-mobile` (giá trị §2.1) — media queries dùng giá trị token (Tailwind
+  breakpoint mặc định md=768px khớp --cs-bp-narrow).
 
 ### 7.3.4 Quy ước class naming (CSS)
 
 ```text
-kebab-case, lowercase — theo hiện trạng app.css
+kebab-case, lowercase — component class ít dùng (ưu tiên Tailwind utility)
 {surface}-{element}[-{state}]    vd: drop-zone, issue-row-selected, stage-done
 state class: {surface}-{state}    vd: drop-zone-dragging, issue-row-resolved
 ```
 
-- Class = styling hook; trạng thái UI (selected/dragging/done/current/pending/
-  invalid) dùng class đi kèm, KHÔNG dùng testid (7.2.1).
+- Class = styling hook cho state UI (selected/dragging/done/current/pending/
+  invalid) mà utility khó diễn tả; ưu tiên Tailwind utility cho layout/spacing/
+  typography. KHÔNG dùng testid làm styling hook (7.2.1).
 - Severity: `severity-{error|warning|ambiguous|info}` + `source-highlight-{severity}`
   (đã có, giữ nguyên — §1.1.1).
 - E2E assert state bằng class khi cần (`toHaveClass` — smoke/explorer dùng

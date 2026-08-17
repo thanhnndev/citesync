@@ -18,39 +18,42 @@
   color-scheme: light;
 
   /* ---------------------------------------------------------------- */
-  /* 1.1 Color                                                         */
+  /* 1.1 Color (M005-S02: giấy ấm — design 'Scholarly Precision')       */
   /* ---------------------------------------------------------------- */
-  --cs-color-bg: #f6f8fa; /* nền trang */
+  --cs-color-bg: #faf9f7; /* nền trang — giấy ấm */
   --cs-color-bg-surface: #ffffff; /* bề mặt card/panel */
-  --cs-color-bg-subtle: #f6f8fa; /* well nhạt (row, chip) */
+  --cs-color-bg-subtle: #f4f2ee; /* well nhạt (row, chip) */
   --cs-color-bg-hover: #eef4ff; /* hover/selected accent-tinted */
-  --cs-color-bg-highlight: #fffdf0; /* block được highlight trong doc */
-  --cs-color-fg: #1f2328; /* chữ chính */
-  --cs-color-fg-muted: #656d76; /* chữ phụ (caption, meta) */
+  --cs-color-bg-highlight: #fdf8ec; /* block được highlight trong doc */
+  --cs-color-fg: #1a1a1a; /* chữ chính */
+  --cs-color-fg-muted: #6b6b6b; /* chữ phụ (caption, meta) */
   --cs-color-fg-inverse: #ffffff; /* chữ trên nền accent */
-  --cs-color-border: #d0d7de; /* viền mặc định */
-  --cs-color-border-strong: #aeb6be; /* viền nổi bật (selected row) */
-  --cs-color-accent: #1a5cff; /* thương hiệu / hành động chính */
+  --cs-color-border: #ddd9d2; /* viền mặc định — tông ấm */
+  --cs-color-border-strong: #b8b4ac; /* viền nổi bật (selected row) */
+  --cs-color-accent: #1a5cff; /* thương hiệu / hành động chính (PWA icon sync) */
   --cs-color-accent-hover: #0d47d0; /* accent hover */
   --cs-color-accent-tint: #eef4ff; /* nền tint accent */
   --cs-color-done: #1a7f37; /* thành công / resolved */
 
   /* 1.1.1 Severity mapping (ERROR → WARNING → AMBIGUOUS → INFO, D022/D024).
-     Màu severity KHÔNG dùng đơn lẻ — luôn có nhãn chữ/marker (PRD §89). */
-  --cs-color-severity-error: #d1242f;
-  --cs-color-severity-error-tint: #ffebe9;
+     Màu severity KHÔNG dùng đơn lẻ — luôn có nhãn chữ/marker (PRD §89).
+     M005-S02: tint ấm theo tông giấy. */
+  --cs-color-severity-error: #b3261e;
+  --cs-color-severity-error-tint: #fdecea;
   --cs-color-severity-warning: #9a6700;
-  --cs-color-severity-warning-tint: #fff8c5;
+  --cs-color-severity-warning-tint: #fdf3d7;
   --cs-color-severity-ambiguous: #bc4c00;
-  --cs-color-severity-ambiguous-tint: #fff1e5;
+  --cs-color-severity-ambiguous-tint: #fdeee1;
   --cs-color-severity-info: #57606a;
   --cs-color-severity-info-tint: #eaeef2;
 
   /* ---------------------------------------------------------------- */
-  /* 1.2 Typography (dependency-free — offline-first PRD §11)          */
-  /* ---------------------------------------------------------------- */
-  --cs-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --cs-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* 1.2 Typography (dependency-free — offline-first PRD §11;
+     M005-S02: font VI-capable qua @fontsource — Fraunces / Be Vietnam Pro /
+     JetBrains Mono, đã kiểm chứng hỗ trợ tiếng Việt). */
+  --cs-font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --cs-font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+  --cs-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --cs-font-size-display: 1.75rem; /* H1 — tiêu đề app (header) */
   --cs-font-size-h2: 1.1rem; /* H2 — tiêu đề section/panel */

@@ -17,6 +17,10 @@
  * n > 0. Counts come from the T1 ResolutionsView (applyResolutions), NEVER
  * from the frozen `report.counts` — the canonical report stays byte-identical.
  *
+ * M005-S02-T4 (Tailwind v4): redesign per UI-SPEC mockup 5.4 — severity
+ * chips + tinted group headers, row hover/selected accent, resolved chip.
+ * testids + state classes FROZEN.
+ *
  * data-testid contract (FROZEN for T6 e2e): explorer, severity-group-{severity},
  * issue-row-{id}; the selected row carries the `issue-row-selected` class,
  * the resolved row the `issue-row-resolved` class.
@@ -32,6 +36,21 @@ const SEVERITY_CLASS: Record<LintIssue['severity'], string> = {
   WARNING: 'severity-warning',
   AMBIGUOUS: 'severity-ambiguous',
   INFO: 'severity-info',
+};
+
+/** Tailwind accent per severity (group header + selected row). */
+const SEVERITY_ACCENT: Record<LintIssue['severity'], string> = {
+  ERROR: 'text-severity-error',
+  WARNING: 'text-severity-warning',
+  AMBIGUOUS: 'text-severity-ambiguous',
+  INFO: 'text-severity-info',
+};
+
+const SEVERITY_TINT: Record<LintIssue['severity'], string> = {
+  ERROR: 'bg-severity-error-tint',
+  WARNING: 'bg-severity-warning-tint',
+  AMBIGUOUS: 'bg-severity-ambiguous-tint',
+  INFO: 'bg-severity-info-tint',
 };
 
 export interface IssueExplorerProps {
@@ -57,34 +76,62 @@ export default function IssueExplorer({
   const { t } = useI18n();
   const groups = groupIssuesBySeverity(issues);
   return (
-    <section className="issue-explorer" data-testid="explorer" aria-label={t('explorer.aria-label')}>
-      <h2>{t('explorer.title')}</h2>
+    <section
+      className="issue-explorer min-w-0 rounded-lg border border-border bg-surface p-4 shadow-sm"
+      data-testid="explorer"
+      aria-label={t('explorer.aria-label')}
+    >
+      <h2 className="m-0 mb-3 font-display text-lg font-semibold text-ink">
+        {t('explorer.title')}
+      </h2>
       {groups.length === 0 ? (
-        <p className="issue-explorer-empty">{t('explorer.empty')}</p>
+        <p className="issue-explorer-empty m-0 text-sm text-muted">{t('explorer.empty')}</p>
       ) : (
         groups.map((group) => {
           const resolvedInGroup = resolvedCounts?.[group.severity] ?? 0;
           return (
             <div
               key={group.severity}
-              className={`severity-group ${SEVERITY_CLASS[group.severity]}`}
+              className={`severity-group ${SEVERITY_CLASS[group.severity]} mb-4 last:mb-0`}
               data-testid={`severity-group-${group.severity}`}
             >
-              <h3 className="severity-group-header">
-                <span className="severity-group-name">{group.severity}</span>
-                <span className="severity-group-count">{group.issues.length}</span>
+              <h3 className="severity-group-header m-0 mb-2 flex items-center gap-2">
+                <span className={`severity-group-name text-xs font-bold tracking-wide ${SEVERITY_ACCENT[group.severity]}`}>
+                  {group.severity}
+                </span>
+                <span
+                  className={`severity-group-count rounded-full px-2 py-0.5 font-mono text-xs font-medium tabular-nums ${SEVERITY_TINT[group.severity]} ${SEVERITY_ACCENT[group.severity]}`}
+                >
+                  {group.issues.length}
+                </span>
                 {resolvedInGroup > 0 && (
-                  <span className="severity-group-resolved">
+                  <span className="severity-group-resolved text-xs text-done">
                     {t('explorer.resolved-count', { count: resolvedInGroup })}
                   </span>
                 )}
               </h3>
-              <ul className="issue-list">
+              <ul className="issue-list m-0 flex list-none flex-col gap-1 p-0">
                 {group.issues.map((issue) => {
                   const resolved = resolvedByIssue?.[issue.id];
                   const classes = [
                     'issue-row',
-                    issue.id === selectedIssueId ? 'issue-row-selected' : '',
+                    'flex',
+                    'w-full',
+                    'items-start',
+                    'gap-2',
+                    'rounded-md',
+                    'border-l-2',
+                    'border-transparent',
+                    'px-3',
+                    'py-2',
+                    'text-left',
+                    'transition-colors',
+                    'duration-150',
+                    'cursor-pointer',
+                    'hover:bg-hover',
+                    issue.id === selectedIssueId
+                      ? 'issue-row-selected border-accent bg-accent-tint'
+                      : '',
                     resolved !== undefined ? 'issue-row-resolved' : '',
                   ]
                     .filter(Boolean)
@@ -97,10 +144,14 @@ export default function IssueExplorer({
                         data-testid={`issue-row-${issue.id}`}
                         onClick={() => onSelect(issue.id)}
                       >
-                        <code className="issue-row-id">{issue.id}</code>
-                        <span className="issue-row-message">{issue.message}</span>
+                        <code className="issue-row-id shrink-0 font-mono text-xs text-muted">
+                          {issue.id}
+                        </code>
+                        <span className="issue-row-message min-w-0 text-sm text-pretty text-ink">
+                          {issue.message}
+                        </span>
                         {resolved !== undefined && (
-                          <span className="issue-row-resolved-chip">
+                          <span className="issue-row-resolved-chip ml-auto shrink-0 self-center rounded-full bg-done/10 px-2 py-0.5 text-xs font-medium text-done">
                             {t('explorer.resolved-chip', {
                               label: referenceLabel(resolved.chosenEntry),
                             })}

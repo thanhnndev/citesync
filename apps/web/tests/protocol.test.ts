@@ -22,6 +22,7 @@ import { runAnalysis } from '../src/worker/client';
 import {
   classifyWorkerError,
   describeWorkerError,
+  errorGuidanceKey,
   isDoneMessage,
   isErrorMessage,
   isStageMessage,
@@ -209,6 +210,25 @@ describe('describeWorkerError', () => {
 
   it('falls back to "Unexpected error: <name>" for unknown names', () => {
     expect(describeWorkerError('WhateverError')).toBe('Unexpected error: WhateverError');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// errorGuidanceKey (M005-S02-T3 — i18n guidance layer, UI-SPEC §3.3)
+// ---------------------------------------------------------------------------
+
+describe('errorGuidanceKey', () => {
+  it('maps every known error name to its dedicated guidance key', () => {
+    expect(errorGuidanceKey('NotADocxError')).toBe('error.guidance.not-docx');
+    expect(errorGuidanceKey('ZipBombError')).toBe('error.guidance.oversize');
+    expect(errorGuidanceKey('ParseFailureError')).toBe('error.guidance.parse-failure');
+    expect(errorGuidanceKey('UnsupportedFormatError')).toBe('error.guidance.unsupported');
+    expect(errorGuidanceKey('TimeBudgetExceededError')).toBe('error.guidance.time-budget');
+  });
+
+  it('collapses unknown names to the generic guidance key (total — never undefined)', () => {
+    expect(errorGuidanceKey('WhateverError')).toBe('error.guidance.generic');
+    expect(errorGuidanceKey('')).toBe('error.guidance.generic');
   });
 });
 

@@ -11,10 +11,15 @@
  * anything else shows an inline message and never reaches the worker. The
  * accepted file is read via File.arrayBuffer() — the raw bytes (transferable)
  * go straight to useAnalyze.analyze(bytes.buffer → ArrayBuffer, file.name).
+ *
+ * M005-S02-T3 (Tailwind v4 — user directive): full visual redesign per
+ * UI-SPEC mockup 5.1. testids + logic FROZEN — classes are Tailwind
+ * utilities only.
  */
 
 import { useRef, useState } from 'react';
 import { useI18n } from '../i18n/useI18n';
+import { DocumentIcon } from './icons';
 
 export interface DropZoneProps {
   /** Called with the raw file bytes + name once a .docx passes validation. */
@@ -44,9 +49,37 @@ export default function DropZone({ onAnalyze }: DropZoneProps) {
     void file.arrayBuffer().then((buffer) => onAnalyze(buffer, file.name));
   }
 
+  const zoneClasses = [
+    'relative',
+    'mx-auto',
+    'flex',
+    'max-w-xl',
+    'flex-col',
+    'items-center',
+    'justify-center',
+    'gap-2',
+    'rounded-lg',
+    'border-2',
+    'border-dashed',
+    'border-border-strong',
+    'bg-surface',
+    'px-6',
+    'py-16',
+    'text-center',
+    'shadow-sm',
+    'transition-colors',
+    'duration-150',
+    dragging
+      ? 'border-accent bg-accent-tint shadow-md'
+      : 'hover:border-accent hover:bg-subtle',
+    invalidFileName !== null ? 'border-severity-error' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <section
-      className={`drop-zone${dragging ? ' drop-zone-dragging' : ''}`}
+      className={`drop-zone ${zoneClasses}`}
       data-testid="drop-zone"
       onDragEnter={(event) => {
         event.preventDefault();
@@ -74,16 +107,19 @@ export default function DropZone({ onAnalyze }: DropZoneProps) {
         type="file"
         accept=".docx"
         data-testid="file-input"
-        className="file-input"
+        className="file-input absolute inset-0 z-zone-overlay h-full w-full cursor-pointer opacity-0"
         aria-label={t('drop.choose-label')}
         onChange={(event) => handleFile(event.target.files?.[0])}
       />
-      <p className="drop-zone-title">
+      <DocumentIcon className="pointer-events-none h-8 w-8 text-accent" />
+      <p className="pointer-events-none m-0 font-display text-xl font-semibold text-balance text-ink">
         {dragging ? t('drop.dragging') : t('drop.title')}
       </p>
-      <p className="drop-zone-hint">{t('drop.hint')}</p>
+      <p className="pointer-events-none m-0 text-sm text-pretty text-muted">
+        {t('drop.hint')}
+      </p>
       {invalidFileName !== null && (
-        <p className="drop-zone-invalid" role="alert">
+        <p className="drop-zone-invalid m-0 rounded-md bg-severity-error-tint px-3 py-2 text-sm text-severity-error" role="alert">
           {t('drop.invalid-file', { name: invalidFileName })}
         </p>
       )}

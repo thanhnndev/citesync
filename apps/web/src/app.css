@@ -1,796 +1,225 @@
 /*
- * CiteSync — app shell styling (M005-S01-T03).
+ * CiteSync app styles — M005-S02: Tailwind CSS v4 (user directive).
  *
- * Refactored from hardcoded values → design tokens (--cs-*) defined in
- * design-system.css (contract: docs/UI-SPEC.md §1). Component logic and the
- * data-testid FROZEN contract are untouched — this file is pure styling.
+ * Stack: `@import "tailwindcss"` compiles utilities + the @theme token map
+ * below. Design tokens stay in design-system.css (the S01 single source —
+ * guard test design-tokens.test.ts reads them); @theme merely MAPS the
+ * Tailwind utility namespaces onto those --cs-* tokens so components use
+ * `bg-paper`, `text-ink`, `font-display` etc. instead of raw values.
  *
- * Layout note (T03 scope): max-width 720px giữ nguyên (flow-column contract,
- * UI-SPEC §2.2 — shell mở rộng 1080px + flow-column wrapper là việc S02).
- * Explorer breakpoint 700px giữ nguyên trong T03 (UI-SPEC §2.1).
+ * Fonts (VI-capable, verified via Google Fonts API + @fontsource woff2):
+ *   - Fraunces       → display serif (headings, brand)
+ *   - Be Vietnam Pro → body sans (designed for Vietnamese)
+ *   - JetBrains Mono → code/ids/confidence
+ * Bundled locally (offline-first PWA — no font CDN, PRD §11); vite.config
+ * precaches woff2 via workbox globPatterns.
  */
 
-/* design-system.css cung cấp toàn bộ token --cs-* (khai báo trước app.css
-   trong App.tsx). */
+/* Local font files (woff2 — offline-safe). Order: fonts before tailwind. */
+@import '@fontsource/fraunces/400.css';
+@import '@fontsource/fraunces/600.css';
+@import '@fontsource/fraunces/700.css';
+@import '@fontsource/be-vietnam-pro/400.css';
+@import '@fontsource/be-vietnam-pro/500.css';
+@import '@fontsource/be-vietnam-pro/600.css';
+@import '@fontsource/be-vietnam-pro/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import 'tailwindcss';
 
-* {
-  box-sizing: border-box;
+/*
+ * @theme — Tailwind v4 CSS-first config (no tailwind.config.js).
+ * Every value maps 1:1 onto a --cs-* token from design-system.css (UI-SPEC
+ * §1) so the token contract stays the single source of truth.
+ */
+@theme {
+  /* ---- fonts (VI-capable, từ design-system.css §1.2) ---- */
+  --font-display: var(--cs-font-display);
+  --font-sans: var(--cs-font-sans);
+  --font-mono: var(--cs-font-mono);
+
+  /* ---- surfaces & ink ---- */
+  --color-paper: var(--cs-color-bg); /* trang giấy */
+  --color-surface: var(--cs-color-bg-surface); /* card/panel */
+  --color-subtle: var(--cs-color-bg-subtle); /* well nhạt */
+  --color-hover: var(--cs-color-bg-hover); /* hover/selected tint */
+  --color-highlight: var(--cs-color-bg-highlight); /* block highlight */
+  --color-ink: var(--cs-color-fg);
+  --color-muted: var(--cs-color-fg-muted);
+  --color-inverse: var(--cs-color-fg-inverse);
+  --color-border: var(--cs-color-border);
+  --color-border-strong: var(--cs-color-border-strong);
+  --color-accent: var(--cs-color-accent);
+  --color-accent-hover: var(--cs-color-accent-hover);
+  --color-accent-tint: var(--cs-color-accent-tint);
+  --color-done: var(--cs-color-done);
+
+  /* ---- severity (always paired with a text label — PRD §89) ---- */
+  --color-severity-error: var(--cs-color-severity-error);
+  --color-severity-error-tint: var(--cs-color-severity-error-tint);
+  --color-severity-warning: var(--cs-color-severity-warning);
+  --color-severity-warning-tint: var(--cs-color-severity-warning-tint);
+  --color-severity-ambiguous: var(--cs-color-severity-ambiguous);
+  --color-severity-ambiguous-tint: var(--cs-color-severity-ambiguous-tint);
+  --color-severity-info: var(--cs-color-severity-info);
+  --color-severity-info-tint: var(--cs-color-severity-info-tint);
+
+  /* ---- radius ---- */
+  --radius-sm: var(--cs-radius-sm);
+  --radius-md: var(--cs-radius-md);
+  --radius-lg: var(--cs-radius-lg);
+  --radius-pill: var(--cs-radius-pill);
+
+  /* ---- shadow (layered) ---- */
+  --shadow-sm: var(--cs-shadow-sm);
+  --shadow-md: var(--cs-shadow-md);
+  --shadow-lg: var(--cs-shadow-lg);
+
+  /* ---- z-index ---- */
+  --z-zone-overlay: var(--cs-z-zone-overlay);
+  --z-sticky: var(--cs-z-sticky);
+  --z-overlay: var(--cs-z-overlay);
+  --z-modal: var(--cs-z-modal);
+  --z-toast: var(--cs-z-toast);
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                               */
+/* ------------------------------------------------------------------ */
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  margin: 0;
-  font-family: var(--cs-font-sans);
-  color: var(--cs-color-fg);
   background: var(--cs-color-bg);
+  color: var(--cs-color-fg);
+  font-family: var(--cs-font-sans);
+  font-size: var(--cs-font-size-body);
+  line-height: var(--cs-line-height-normal);
 }
 
+/* ------------------------------------------------------------------ */
+/* App shell (token-driven — guard test design-tokens.test.ts reads    */
+/* these three rules, keep them var(--cs-*) based)                     */
+/* ------------------------------------------------------------------ */
+
 .app-shell {
-  max-width: 720px;
+  /* M005-S02-T4: full-viewport shell — desktop fits 100dvh (no deep page
+     scroll, per user directive); mobile grows naturally. Width widened
+     from 1080 → 1240px so the explorer grid breathes (user: "width bị
+     giới hạn"). Flex column: header (shrink-0) → state region (flex-1). */
+  max-width: 1240px;
   margin: 0 auto;
-  padding: var(--cs-space-5) var(--cs-space-page-x) var(--cs-space-8);
+  padding: 0 var(--cs-space-page-x) var(--cs-space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--cs-space-5);
+  min-height: 100dvh;
+  gap: var(--cs-space-4);
+}
+
+/* Viewport-height state region: fills the space under the header. */
+.app-shell main.region {
+  flex: 1;
+  min-height: 0;
 }
 
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--cs-z-sticky);
+  background: color-mix(in srgb, var(--cs-color-bg) 92%, transparent);
+  backdrop-filter: blur(6px);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--cs-space-3);
-  flex-wrap: wrap;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: var(--cs-font-size-display);
-  font-weight: var(--cs-font-weight-bold);
-}
-
-.processing-badge {
-  margin: 0;
-  font-size: var(--cs-font-size-caption);
-  color: var(--cs-color-fg-muted);
-}
-
-.app-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--cs-space-3);
-  flex-wrap: wrap;
-}
-
-/* M005-S01-T4 — locale switch (thô): EN/VI segmented control. */
-.locale-switch {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-sm);
-  background: var(--cs-color-bg-surface);
-}
-
-.locale-switch-option {
-  border: 0;
-  padding: var(--cs-space-1) var(--cs-space-2);
-  font: inherit;
-  font-size: var(--cs-font-size-caption);
-  color: var(--cs-color-fg);
-  background: transparent;
-  border-radius: calc(var(--cs-radius-sm) - 2px);
-  cursor: pointer;
-}
-
-.locale-switch-option:hover {
-  background: var(--cs-color-bg-hover);
-}
-
-.locale-switch-option[aria-pressed='true'] {
-  background: var(--cs-color-accent);
-  color: var(--cs-color-fg-inverse);
-}
-
-/* ------------------------------------------------------------------ */
-/* Drop zone                                                           */
-/* ------------------------------------------------------------------ */
-
-.drop-zone {
-  position: relative;
-  border: 2px dashed var(--cs-color-border);
-  border-radius: var(--cs-radius-md);
-  background: var(--cs-color-bg-surface);
-  padding: var(--cs-space-6) var(--cs-space-page-x);
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.drop-zone-dragging {
-  border-color: var(--cs-color-accent);
-  background: var(--cs-color-bg-hover);
-}
-
-/*
- * The file input is an invisible full-zone overlay: click anywhere opens the
- * picker, Playwright setInputFiles still works on it (T6 e2e — it only needs
- * the element, not visibility), and drag & drop events bubble to the section.
- */
-.file-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-  z-index: var(--cs-z-zone-overlay);
-}
-
-.drop-zone-title {
-  margin: 0 0 var(--cs-space-1);
-  font-weight: var(--cs-font-weight-semibold);
-}
-
-.drop-zone-hint {
-  margin: 0;
-  font-size: var(--cs-font-size-caption);
-  color: var(--cs-color-fg-muted);
-}
-
-.drop-zone-invalid {
-  margin: var(--cs-space-3) 0 0;
-  color: var(--cs-color-severity-error);
-  font-size: var(--cs-font-size-body);
-}
-
-/* ------------------------------------------------------------------ */
-/* Stage checklist (PRD §61)                                           */
-/* ------------------------------------------------------------------ */
-
-.stage-checklist h2 {
-  margin: 0 0 var(--cs-space-3);
-  font-size: var(--cs-font-size-h2);
-}
-
-.stage-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--cs-space-2);
-}
-
-.stage-item {
-  display: flex;
-  align-items: center;
-  gap: var(--cs-space-2);
-  padding: var(--cs-space-2) var(--cs-space-3);
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-sm);
-  background: var(--cs-color-bg-surface);
-}
-
-.stage-marker {
-  width: 1.1em;
-  text-align: center;
-}
-
-.stage-item.stage-done .stage-marker {
-  color: var(--cs-color-done);
-}
-
-.stage-item.stage-current {
-  border-color: var(--cs-color-accent);
-}
-
-.stage-item.stage-current .stage-marker {
-  color: var(--cs-color-accent);
-}
-
-.stage-item.stage-pending {
-  color: var(--cs-color-fg-muted);
-}
-
-.stage-name {
-  margin-left: auto;
-  font-size: var(--cs-font-size-code);
-  color: var(--cs-color-fg-muted);
-  font-family: var(--cs-font-mono);
-}
-
-/* ------------------------------------------------------------------ */
-/* Report summary (D024)                                               */
-/* ------------------------------------------------------------------ */
-
-.report-summary {
-  background: var(--cs-color-bg-surface);
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-md);
-  padding: var(--cs-space-4);
-  box-shadow: var(--cs-shadow-sm);
-}
-
-.report-summary h2 {
-  margin: 0 0 var(--cs-space-3);
-  font-size: var(--cs-font-size-h2);
-}
-
-.severity-counts {
-  list-style: none;
-  margin: 0 0 var(--cs-space-3);
-  padding: 0;
-  display: flex;
-  gap: var(--cs-space-3);
-  flex-wrap: wrap;
-}
-
-.severity-count {
-  display: flex;
-  align-items: baseline;
-  gap: var(--cs-space-1);
-  padding: var(--cs-space-1) var(--cs-space-3);
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-sm);
-  background: var(--cs-color-bg-subtle);
-}
-
-.severity-count .severity-value {
-  font-weight: var(--cs-font-weight-bold);
-}
-
-.severity-error .severity-value {
-  color: var(--cs-color-severity-error);
-}
-
-.severity-warning .severity-value {
-  color: var(--cs-color-severity-warning);
-}
-
-.severity-ambiguous .severity-value {
-  color: var(--cs-color-severity-ambiguous);
-}
-
-.severity-info .severity-value {
-  color: var(--cs-color-severity-info);
-}
-
-.report-meta {
-  margin: 0;
-  font-size: var(--cs-font-size-caption);
-  color: var(--cs-color-fg-muted);
-}
-
-/* ------------------------------------------------------------------ */
-/* Explorer layout (R012)                                              */
-/* ------------------------------------------------------------------ */
-
-.explorer-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
-  gap: var(--cs-space-5);
-  align-items: start;
-}
-
-/* Breakpoint hiện tại giữ nguyên trong T03 (UI-SPEC §2.1 — chuẩn hóa về
-   token breakpoint là việc S02–S04). */
-@media (max-width: 700px) {
-  .explorer-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-.doc-column {
-  display: flex;
-  flex-direction: column;
-  gap: var(--cs-space-5);
-  min-width: 0;
-}
-
-/* ------------------------------------------------------------------ */
-/* Issue explorer (severity groups)                                    */
-/* ------------------------------------------------------------------ */
-
-.issue-explorer,
-.doc-view,
-.evidence-panel,
-.recovery-panel {
-  background: var(--cs-color-bg-surface);
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-md);
-  padding: var(--cs-space-4);
-  box-shadow: var(--cs-shadow-sm);
-}
-
-.issue-explorer h2,
-.doc-view h2,
-.evidence-panel h2,
-.recovery-panel h2 {
-  margin: 0 0 var(--cs-space-3);
-  font-size: var(--cs-font-size-h2);
-}
-
-.issue-explorer-empty {
-  margin: 0;
-  font-size: var(--cs-font-size-body);
-  color: var(--cs-color-fg-muted);
-}
-
-.severity-group + .severity-group {
-  margin-top: var(--cs-space-4);
-}
-
-.severity-group-header {
-  display: flex;
-  align-items: baseline;
-  gap: var(--cs-space-2);
-  margin: 0 0 var(--cs-space-1);
-  font-size: var(--cs-font-size-code);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.severity-group-count {
-  font-weight: var(--cs-font-weight-bold);
-}
-
-.severity-group.severity-error .severity-group-name,
-.severity-group.severity-error .severity-group-count {
-  color: var(--cs-color-severity-error);
-}
-
-.severity-group.severity-warning .severity-group-name,
-.severity-group.severity-warning .severity-group-count {
-  color: var(--cs-color-severity-warning);
-}
-
-.severity-group.severity-ambiguous .severity-group-name,
-.severity-group.severity-ambiguous .severity-group-count {
-  color: var(--cs-color-severity-ambiguous);
-}
-
-.severity-group.severity-info .severity-group-name,
-.severity-group.severity-info .severity-group-count {
-  color: var(--cs-color-severity-info);
-}
-
-.issue-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--cs-space-2);
-}
-
-.issue-row {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--cs-space-2);
-  width: 100%;
-  text-align: left;
-  padding: var(--cs-space-2) var(--cs-space-3);
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-sm);
-  background: var(--cs-color-bg-subtle);
-  color: var(--cs-color-fg);
-  font: inherit;
-  cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease;
-}
-
-.issue-row:hover {
-  border-color: var(--cs-color-accent);
-  background: var(--cs-color-bg-hover);
-}
-
-.issue-row.issue-row-selected {
-  border-color: var(--cs-color-accent);
-  background: var(--cs-color-accent-tint);
-  box-shadow: 0 0 0 1px var(--cs-color-accent);
-}
-
-.issue-row-id {
-  flex-shrink: 0;
-  font-family: var(--cs-font-mono);
-  font-size: var(--cs-font-size-code-sm);
-  color: var(--cs-color-fg-muted);
-}
-
-.issue-row-message {
-  font-size: var(--cs-font-size-body);
-  line-height: var(--cs-line-height-normal);
-}
-
-/* R013 resolved-row chip (UI-derived view, D034 — report.counts untouched) */
-.issue-row.issue-row-resolved {
-  border-color: var(--cs-color-done);
-}
-
-.issue-row-resolved-chip {
-  display: block;
-  margin-top: var(--cs-space-1);
-  font-size: var(--cs-font-size-code-sm);
-  color: var(--cs-color-done);
-}
-
-/* R013 per-group resolved count in the header ("{n} resolved") — the header
-   uppercases its text (text-transform: uppercase); the resolved span resets
-   it so the e2e-pinned wording '{n} resolved' stays verbatim in rendered
-   text (innerText), not just textContent. */
-.severity-group-resolved {
-  margin-left: auto;
-  font-size: var(--cs-font-size-code-sm);
-  font-weight: var(--cs-font-weight-semibold);
-  color: var(--cs-color-done);
-  text-transform: none;
-}
-
-/* ------------------------------------------------------------------ */
-/* Document view (click-to-source, R009)                               */
-/* ------------------------------------------------------------------ */
-
-.doc-view-scroll {
-  max-height: 460px;
-  overflow-y: auto;
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-sm);
-  padding: var(--cs-space-1) var(--cs-space-3);
-  background: var(--cs-color-bg-subtle);
-}
-
-.doc-block {
-  margin: 0;
-  padding: var(--cs-space-2) var(--cs-space-1);
-  font-size: var(--cs-font-size-body);
-  line-height: var(--cs-line-height-normal);
+  padding: var(--cs-space-3) 0;
   border-bottom: 1px solid var(--cs-color-border);
 }
 
-.doc-block:last-child {
-  border-bottom: none;
-}
-
-.doc-block.doc-block-highlighted {
-  background: var(--cs-color-bg-highlight);
-  border-radius: var(--cs-radius-sm);
-}
-
-/* Severity-tinted highlight mark (colors from the :root vars) */
-mark.source-highlight {
-  padding: 0 var(--cs-space-1);
-  border-radius: var(--cs-radius-sm);
-  cursor: pointer;
-}
-
-mark.source-highlight.source-highlight-error {
-  background: var(--cs-color-severity-error-tint);
-  color: var(--cs-color-severity-error);
-}
-
-mark.source-highlight.source-highlight-warning {
-  background: var(--cs-color-severity-warning-tint);
-  color: var(--cs-color-severity-warning);
-}
-
-mark.source-highlight.source-highlight-ambiguous {
-  background: var(--cs-color-severity-ambiguous-tint);
-  color: var(--cs-color-severity-ambiguous);
-}
-
-mark.source-highlight.source-highlight-info {
-  background: var(--cs-color-severity-info-tint);
-  color: var(--cs-color-severity-info);
-}
-
-.doc-view-empty {
-  margin: 0;
-  font-size: var(--cs-font-size-body);
-  color: var(--cs-color-fg-muted);
-}
-
-/* ------------------------------------------------------------------ */
-/* Evidence panel (R012)                                               */
-/* ------------------------------------------------------------------ */
-
-.evidence-issue {
-  display: flex;
-  gap: var(--cs-space-2);
-  margin: 0 0 var(--cs-space-2);
-  font-size: var(--cs-font-size-caption);
-}
-
-.evidence-issue-id {
-  flex-shrink: 0;
-  font-family: var(--cs-font-mono);
-  font-size: var(--cs-font-size-code-sm);
-  color: var(--cs-color-fg-muted);
-}
-
-.evidence-list {
-  list-style: none;
-  margin: 0 0 var(--cs-space-3);
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--cs-space-2);
-}
-
-.evidence-item {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--cs-space-1) var(--cs-space-2);
-  padding: var(--cs-space-2) var(--cs-space-3);
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-sm);
-  background: var(--cs-color-bg-subtle);
-}
-
-.evidence-code {
-  grid-column: 1 / -1;
-  font-family: var(--cs-font-mono);
-  font-size: var(--cs-font-size-code-sm);
-  color: var(--cs-color-accent);
-}
-
-.evidence-message {
-  font-size: var(--cs-font-size-body);
-  line-height: var(--cs-line-height-normal);
-}
-
-.evidence-source {
-  grid-column: 1 / -1;
-  font-size: var(--cs-font-size-caption);
-  color: var(--cs-color-fg-muted);
-  font-style: italic;
-}
-
-.evidence-references-heading {
-  margin: 0 0 var(--cs-space-1);
-  font-size: var(--cs-font-size-body);
-}
-
-.reference-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--cs-space-1);
-}
-
-.reference-entry {
-  padding: var(--cs-space-1) var(--cs-space-2);
-  font-size: var(--cs-font-size-body);
-  line-height: var(--cs-line-height-normal);
-  border-left: 3px solid var(--cs-color-border);
-}
-
-.evidence-empty-refs {
-  margin: 0;
-  font-size: var(--cs-font-size-caption);
-  color: var(--cs-color-fg-muted);
-}
-
-/* ------------------------------------------------------------------ */
-/* Bibliography recovery panel (PRD §63 ask-user)                      */
-/* ------------------------------------------------------------------ */
-
-.recovery-explanation {
-  margin: 0 0 var(--cs-space-2);
-  font-size: var(--cs-font-size-caption);
-  color: var(--cs-color-fg-muted);
-}
-
-.recovery-empty {
-  margin: 0;
-  font-size: var(--cs-font-size-caption);
-  color: var(--cs-color-fg-muted);
-}
-
-.recovery-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--cs-space-2);
-}
-
-.recovery-candidate {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cs-space-3);
-  padding: var(--cs-space-2) var(--cs-space-3);
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-sm);
-  background: var(--cs-color-bg-subtle);
-}
-
-.recovery-candidate-main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--cs-space-1);
-  min-width: 0;
-}
-
-.recovery-heading {
+.app-header h1 {
+  font-family: var(--cs-font-display);
+  font-size: var(--cs-font-size-display);
   font-weight: var(--cs-font-weight-semibold);
-  font-size: var(--cs-font-size-body);
+  letter-spacing: -0.01em;
+  margin: 0;
 }
 
-.recovery-type {
-  font-size: var(--cs-font-size-code-sm);
-  color: var(--cs-color-fg-muted);
-}
-
-.recovery-confidence {
-  font-size: var(--cs-font-size-code-sm);
-  font-family: var(--cs-font-mono);
-  color: var(--cs-color-fg-muted);
-}
-
-.recovery-use {
-  flex-shrink: 0;
-  padding: var(--cs-space-1) var(--cs-space-3);
-  border: 1px solid var(--cs-color-accent);
-  border-radius: var(--cs-radius-md);
-  background: var(--cs-color-bg-surface);
-  color: var(--cs-color-accent);
-  font: inherit;
-  font-size: var(--cs-font-size-code);
-  cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.recovery-use:hover {
-  background: var(--cs-color-accent);
-  color: var(--cs-color-fg-inverse);
-}
-
-/* ------------------------------------------------------------------ */
-/* Resolution picker (R013 manual ambiguity resolution — severity-tint) */
-/* ------------------------------------------------------------------ */
-
-.resolution-picker {
-  background: var(--cs-color-bg-surface);
-  border: 1px solid var(--cs-color-severity-ambiguous);
-  border-radius: var(--cs-radius-md);
-  padding: var(--cs-space-4);
-  box-shadow: var(--cs-shadow-sm);
-}
-
-.resolution-picker h2 {
-  margin: 0 0 var(--cs-space-1);
-  font-size: var(--cs-font-size-h2);
-  color: var(--cs-color-severity-ambiguous);
-}
-
-.resolution-picker-hint {
-  margin: 0 0 var(--cs-space-2);
+.processing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cs-space-1);
   font-size: var(--cs-font-size-caption);
   color: var(--cs-color-fg-muted);
+  margin: 0;
 }
 
-.resolution-candidates {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* ------------------------------------------------------------------ */
+/* Layout helpers (Tailwind-utility equivalents kept as CSS only where   */
+/* they encode layout policy shared across states, token-free colors)    */
+/* ------------------------------------------------------------------ */
+
+/* Centered single-column view (idle hero/drop, analyzing stages, error):
+   fills the viewport height, scrolls internally only when the viewport
+   is too short — no deep page scroll on desktop (user directive). */
+.view-center {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--cs-space-2);
-}
-
-.resolution-candidate {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--cs-space-3);
-  padding: var(--cs-space-2) var(--cs-space-3);
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-sm);
-  background: var(--cs-color-bg-subtle);
+  justify-content: center;
+  gap: var(--cs-space-5);
+  padding: var(--cs-space-5) 0;
+  overflow-y: auto;
 }
 
-.resolution-candidate.resolution-candidate-chosen {
-  border-color: var(--cs-color-severity-ambiguous);
-  background: var(--cs-color-severity-ambiguous-tint);
-}
-
-.resolution-candidate-label {
-  min-width: 0;
-  font-size: var(--cs-font-size-body);
-  line-height: var(--cs-line-height-normal);
-}
-
-.resolution-choose {
-  flex-shrink: 0;
-  padding: var(--cs-space-1) var(--cs-space-3);
-  border: 1px solid var(--cs-color-severity-ambiguous);
-  border-radius: var(--cs-radius-md);
-  background: var(--cs-color-bg-surface);
-  color: var(--cs-color-severity-ambiguous);
-  font: inherit;
-  font-size: var(--cs-font-size-code);
-  cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.resolution-choose:hover {
-  background: var(--cs-color-severity-ambiguous);
-  color: var(--cs-color-fg-inverse);
-}
-
-.resolution-choose.resolution-choose-chosen {
-  background: var(--cs-color-severity-ambiguous);
-  color: var(--cs-color-fg-inverse);
-}
-
-/* ------------------------------------------------------------------ */
-/* Error panel (R016)                                                  */
-/* ------------------------------------------------------------------ */
-
-.error-panel {
-  background: var(--cs-color-bg-surface);
-  border: 1px solid var(--cs-color-severity-error);
-  border-radius: var(--cs-radius-md);
-  padding: var(--cs-space-3) var(--cs-space-4);
-  box-shadow: var(--cs-shadow-sm);
-}
-
-.error-panel strong {
-  color: var(--cs-color-severity-error);
-}
-
-.error-message {
-  display: block;
-  margin-top: var(--cs-space-1);
-  font-size: var(--cs-font-size-body);
-}
-
-/* ------------------------------------------------------------------ */
-/* Export panel (R014/R008 — done state only, T4)                      */
-/* ------------------------------------------------------------------ */
-
-.export-panel {
-  background: var(--cs-color-bg-surface);
-  border: 1px solid var(--cs-color-border);
-  border-radius: var(--cs-radius-md);
-  padding: var(--cs-space-4);
-  box-shadow: var(--cs-shadow-sm);
-}
-
-.export-panel h2 {
-  margin: 0 0 var(--cs-space-3);
-  font-size: var(--cs-font-size-h2);
-}
-
-.export-actions {
+/* Done region: toolbar (report+export) on top, explorer takes the rest,
+   overflow clipped on desktop so columns scroll internally. */
+.view-done {
+  flex: 1;
+  min-height: 0;
   display: flex;
-  gap: var(--cs-space-2);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--cs-space-4);
 }
 
-.export-button {
-  appearance: none;
-  border: 1px solid var(--cs-color-accent);
-  background: var(--cs-color-accent);
-  color: var(--cs-color-fg-inverse);
-  font: inherit;
-  font-size: var(--cs-font-size-body);
-  font-weight: var(--cs-font-weight-semibold);
-  padding: var(--cs-space-2) var(--cs-space-3);
-  border-radius: var(--cs-radius-md);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+@media (min-width: 768px) {
+  .view-done {
+    overflow: hidden;
+  }
 }
 
-.export-button:hover {
-  background: var(--cs-color-accent-hover);
-  border-color: var(--cs-color-accent-hover);
+/* ------------------------------------------------------------------ */
+/* Motion (make-interfaces-feel-better: split + stagger enter ~100ms,   */
+/* fade+rise, interruptible — respects prefers-reduced-motion)          */
+/* ------------------------------------------------------------------ */
+
+.onboarding-hero h2,
+.onboarding-hero p,
+.onboarding-hero li,
+.stage-item {
+  animation: cs-rise-in 0.28s cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-.export-button:focus-visible {
-  outline: 2px solid var(--cs-color-accent);
-  outline-offset: 2px;
+@keyframes cs-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-hero h2,
+  .onboarding-hero p,
+  .onboarding-hero li,
+  .stage-item {
+    animation: none;
+  }
 }
