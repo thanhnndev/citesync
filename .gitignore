@@ -46,3 +46,5 @@ vendor/
 coverage/
 .cache/
 tmp/
+
+.commandcode/
