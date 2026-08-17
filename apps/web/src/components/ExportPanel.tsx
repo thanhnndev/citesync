@@ -11,6 +11,11 @@
  * panel never touches the parsed document or the issue list beyond what the
  * frozen report already carries.
  *
+ * M005-S02-T3 (Tailwind v4): export-failure surface (testid `export-error`,
+ * UI-SPEC §4.5/5.7) — each click runs through `trySave`; a thrown download
+ * shows the inline error and a re-click retries (state resets per click).
+ * Primary/secondary button styling per design. testids FROZEN.
+ *
  * data-testid contract (FROZEN — T4 e2e, must never change):
  *   - export-panel   (wrapper — only mounted in the done state)
  *   - export-json    (the JSON download button)
@@ -21,11 +26,14 @@
  * ../export/download.ts so no DOM leaks into other modules.
  */
 
+import { useState } from 'react';
 import { serializeReport } from '@citesync/core';
 import type { CliReport } from '@citesync/core';
 import { saveTextFile } from '../export/download';
 import { exportHtmlFilename, exportJsonFilename } from '../export/filenames';
 import { buildHtmlReport } from '../export/html';
+import { trySave } from '../export/trySave';
+import { useI18n } from '../i18n/useI18n';
 
 export interface ExportPanelProps {
   /** The canonical CLI-compatible report (D024) from the done envelope. */
@@ -33,45 +41,69 @@ export interface ExportPanelProps {
 }
 
 export default function ExportPanel({ report }: ExportPanelProps) {
+  const { t } = useI18n();
+  // M005-S02-T3: per-click failure flag — reset by the outcome of each click
+  // (a successful retry clears it; no stale error after a working download).
+  const [exportFailed, setExportFailed] = useState(false);
+
   return (
     <section
-      className="export-panel"
+      className="export-panel rounded-lg border border-border bg-surface p-5 shadow-sm"
       data-testid="export-panel"
-      aria-label="Export report"
+      aria-label={t('export.aria-label')}
     >
-      <h2>Export</h2>
-      <div className="export-actions">
+      <h2 className="m-0 mb-3 font-display text-lg font-semibold text-ink">
+        {t('export.title')}
+      </h2>
+      <div className="export-actions flex flex-wrap gap-2">
         <button
           type="button"
-          className="export-button"
+          className="export-button cursor-pointer rounded-md bg-accent px-4 py-2 text-sm font-semibold text-inverse transition-colors duration-150 hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           data-testid="export-json"
-          aria-label="Export report as JSON"
+          aria-label={t('export.json-aria-label')}
           onClick={() =>
-            saveTextFile(
-              serializeReport(report),
-              exportJsonFilename(report.meta.file),
-              'application/json',
+            setExportFailed(
+              !trySave(() =>
+                saveTextFile(
+                  serializeReport(report),
+                  exportJsonFilename(report.meta.file),
+                  'application/json',
+                ),
+              ),
             )
           }
         >
-          Download JSON report
+          {t('export.json')}
         </button>
         <button
           type="button"
-          className="export-button"
+          className="export-button cursor-pointer rounded-md border border-accent bg-surface px-4 py-2 text-sm font-semibold text-accent transition-colors duration-150 hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           data-testid="export-html"
-          aria-label="Export report as HTML"
+          aria-label={t('export.html-aria-label')}
           onClick={() =>
-            saveTextFile(
-              buildHtmlReport(report),
-              exportHtmlFilename(report.meta.file),
-              'text/html;charset=utf-8',
+            setExportFailed(
+              !trySave(() =>
+                saveTextFile(
+                  buildHtmlReport(report),
+                  exportHtmlFilename(report.meta.file),
+                  'text/html;charset=utf-8',
+                ),
+              ),
             )
           }
         >
-          Download HTML report
+          {t('export.html')}
         </button>
       </div>
+      {exportFailed && (
+        <p
+          className="export-error m-0 mt-3 rounded-md bg-severity-error-tint px-3 py-2 text-sm text-severity-error"
+          data-testid="export-error"
+          role="alert"
+        >
+          {t('export.failure')}
+        </p>
+      )}
     </section>
   );
 }

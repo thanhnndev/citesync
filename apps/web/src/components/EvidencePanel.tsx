@@ -9,6 +9,10 @@
  * against the match/numeric maps (T4 `possibleReferencesForIssue` — matcher
  * data only, §79 no-guess). An empty join renders "No references matched".
  *
+ * M005-S02-T4 (Tailwind v4): redesign per UI-SPEC mockup 5.5 — code badge,
+ * message, italic source, possible-refs with accent left-border. testids +
+ * logic FROZEN.
+ *
  * data-testid contract (FROZEN for T6 e2e): evidence-panel,
  * evidence-code-{code}, possible-ref-{entryId}.
  */
@@ -16,6 +20,7 @@
 import type { AcademicDocument, LintIssue } from '@citesync/core';
 import { possibleReferencesForIssue, referenceLabel } from '../explorer/explorer';
 import type { ReferenceEntry } from '../explorer/explorer';
+import { useI18n } from '../i18n/useI18n';
 
 const MAX_BLOCK_LABEL = 72;
 const MAX_REFERENCE_LABEL = 160;
@@ -44,34 +49,57 @@ export interface EvidencePanelProps {
 }
 
 export default function EvidencePanel({ issue, doc }: EvidencePanelProps) {
+  const { t } = useI18n();
   const references = possibleReferencesForIssue(doc, issue);
   return (
-    <section className="evidence-panel" data-testid="evidence-panel" aria-label="Issue evidence">
-      <h2>Evidence</h2>
-      <p className="evidence-issue">
-        <code className="evidence-issue-id">{issue.id}</code>
-        <span className="evidence-issue-message">{issue.message}</span>
+    <section
+      className="evidence-panel min-w-0 rounded-lg border border-border bg-surface p-4 shadow-sm"
+      data-testid="evidence-panel"
+      aria-label={t('evidence.aria-label')}
+    >
+      <h2 className="m-0 mb-2 font-display text-lg font-semibold text-ink">
+        {t('evidence.title')}
+      </h2>
+      <p className="evidence-issue m-0 mb-3 flex gap-2 text-sm">
+        <code className="evidence-issue-id shrink-0 font-mono text-xs text-muted">
+          {issue.id}
+        </code>
+        <span className="evidence-issue-message min-w-0 text-pretty text-ink">
+          {issue.message}
+        </span>
       </p>
-      <ul className="evidence-list">
+      <ul className="evidence-list m-0 mb-4 flex list-none flex-col gap-2 p-0">
         {issue.evidence.map((evidence, index) => (
-          <li key={`${evidence.code}-${index}`} className="evidence-item">
-            <code className="evidence-code" data-testid={`evidence-code-${evidence.code}`}>
+          <li
+            key={`${evidence.code}-${index}`}
+            className="evidence-item grid gap-1 rounded-md border border-border bg-subtle p-3"
+          >
+            <code
+              className="evidence-code col-span-full font-mono text-xs font-medium text-accent"
+              data-testid={`evidence-code-${evidence.code}`}
+            >
               {evidence.code}
             </code>
-            <span className="evidence-message">{evidence.message}</span>
-            <span className="evidence-source">{blockLabel(doc, evidence.source.blockId)}</span>
+            <span className="evidence-message text-sm leading-normal text-ink">
+              {evidence.message}
+            </span>
+            <span className="evidence-source col-span-full text-sm italic text-muted">
+              {blockLabel(doc, evidence.source.blockId)}
+            </span>
           </li>
         ))}
       </ul>
-      <h3 className="evidence-references-heading">Possible references</h3>
+      <h3 className="evidence-references-heading m-0 mb-1 text-sm font-semibold text-ink">
+        {t('evidence.possible-references')}
+      </h3>
       {references.length === 0 ? (
-        <p className="evidence-empty-refs">No references matched</p>
+        <p className="evidence-empty-refs m-0 text-sm text-muted">{t('evidence.no-refs')}</p>
       ) : (
-        <ul className="reference-list">
+        <ul className="reference-list m-0 flex list-none flex-col gap-1 p-0">
           {references.map((entry) => (
             <li
               key={entry.id}
-              className="reference-entry"
+              className="reference-entry border-l-[3px] border-border px-2 py-1 text-sm leading-normal text-ink"
               data-testid={`possible-ref-${entry.id}`}
             >
               {truncate(referenceLabel(entry), MAX_REFERENCE_LABEL)}

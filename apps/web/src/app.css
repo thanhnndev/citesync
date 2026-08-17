@@ -1,755 +1,225 @@
 /*
- * T5 — minimal app styling: system font stack, simple spacing, severity
- * colors (ERROR red / WARNING yellow / AMBIGUOUS orange / INFO gray).
- * No UI framework — the shell stays dependency-free.
+ * CiteSync app styles — M005-S02: Tailwind CSS v4 (user directive).
+ *
+ * Stack: `@import "tailwindcss"` compiles utilities + the @theme token map
+ * below. Design tokens stay in design-system.css (the S01 single source —
+ * guard test design-tokens.test.ts reads them); @theme merely MAPS the
+ * Tailwind utility namespaces onto those --cs-* tokens so components use
+ * `bg-paper`, `text-ink`, `font-display` etc. instead of raw values.
+ *
+ * Fonts (VI-capable, verified via Google Fonts API + @fontsource woff2):
+ *   - Fraunces       → display serif (headings, brand)
+ *   - Be Vietnam Pro → body sans (designed for Vietnamese)
+ *   - JetBrains Mono → code/ids/confidence
+ * Bundled locally (offline-first PWA — no font CDN, PRD §11); vite.config
+ * precaches woff2 via workbox globPatterns.
  */
 
-:root {
-  color-scheme: light;
-  --color-accent: #1a5cff;
-  --color-border: #d0d7de;
-  --color-text: #1f2328;
-  --color-muted: #656d76;
-  --color-error: #d1242f;
-  --color-warning: #9a6700;
-  --color-ambiguous: #bc4c00;
-  --color-info: #57606a;
-  --color-done: #1a7f37;
-  --radius: 8px;
+/* Local font files (woff2 — offline-safe). Order: fonts before tailwind. */
+@import '@fontsource/fraunces/400.css';
+@import '@fontsource/fraunces/600.css';
+@import '@fontsource/fraunces/700.css';
+@import '@fontsource/be-vietnam-pro/400.css';
+@import '@fontsource/be-vietnam-pro/500.css';
+@import '@fontsource/be-vietnam-pro/600.css';
+@import '@fontsource/be-vietnam-pro/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import 'tailwindcss';
+
+/*
+ * @theme — Tailwind v4 CSS-first config (no tailwind.config.js).
+ * Every value maps 1:1 onto a --cs-* token from design-system.css (UI-SPEC
+ * §1) so the token contract stays the single source of truth.
+ */
+@theme {
+  /* ---- fonts (VI-capable, từ design-system.css §1.2) ---- */
+  --font-display: var(--cs-font-display);
+  --font-sans: var(--cs-font-sans);
+  --font-mono: var(--cs-font-mono);
+
+  /* ---- surfaces & ink ---- */
+  --color-paper: var(--cs-color-bg); /* trang giấy */
+  --color-surface: var(--cs-color-bg-surface); /* card/panel */
+  --color-subtle: var(--cs-color-bg-subtle); /* well nhạt */
+  --color-hover: var(--cs-color-bg-hover); /* hover/selected tint */
+  --color-highlight: var(--cs-color-bg-highlight); /* block highlight */
+  --color-ink: var(--cs-color-fg);
+  --color-muted: var(--cs-color-fg-muted);
+  --color-inverse: var(--cs-color-fg-inverse);
+  --color-border: var(--cs-color-border);
+  --color-border-strong: var(--cs-color-border-strong);
+  --color-accent: var(--cs-color-accent);
+  --color-accent-hover: var(--cs-color-accent-hover);
+  --color-accent-tint: var(--cs-color-accent-tint);
+  --color-done: var(--cs-color-done);
+
+  /* ---- severity (always paired with a text label — PRD §89) ---- */
+  --color-severity-error: var(--cs-color-severity-error);
+  --color-severity-error-tint: var(--cs-color-severity-error-tint);
+  --color-severity-warning: var(--cs-color-severity-warning);
+  --color-severity-warning-tint: var(--cs-color-severity-warning-tint);
+  --color-severity-ambiguous: var(--cs-color-severity-ambiguous);
+  --color-severity-ambiguous-tint: var(--cs-color-severity-ambiguous-tint);
+  --color-severity-info: var(--cs-color-severity-info);
+  --color-severity-info-tint: var(--cs-color-severity-info-tint);
+
+  /* ---- radius ---- */
+  --radius-sm: var(--cs-radius-sm);
+  --radius-md: var(--cs-radius-md);
+  --radius-lg: var(--cs-radius-lg);
+  --radius-pill: var(--cs-radius-pill);
+
+  /* ---- shadow (layered) ---- */
+  --shadow-sm: var(--cs-shadow-sm);
+  --shadow-md: var(--cs-shadow-md);
+  --shadow-lg: var(--cs-shadow-lg);
+
+  /* ---- z-index ---- */
+  --z-zone-overlay: var(--cs-z-zone-overlay);
+  --z-sticky: var(--cs-z-sticky);
+  --z-overlay: var(--cs-z-overlay);
+  --z-modal: var(--cs-z-modal);
+  --z-toast: var(--cs-z-toast);
 }
 
-* {
-  box-sizing: border-box;
+/* ------------------------------------------------------------------ */
+/* Base                                                               */
+/* ------------------------------------------------------------------ */
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  color: var(--color-text);
-  background: #f6f8fa;
+  background: var(--cs-color-bg);
+  color: var(--cs-color-fg);
+  font-family: var(--cs-font-sans);
+  font-size: var(--cs-font-size-body);
+  line-height: var(--cs-line-height-normal);
 }
 
+/* ------------------------------------------------------------------ */
+/* App shell (token-driven — guard test design-tokens.test.ts reads    */
+/* these three rules, keep them var(--cs-*) based)                     */
+/* ------------------------------------------------------------------ */
+
 .app-shell {
-  max-width: 720px;
+  /* M005-S02-T4: full-viewport shell — desktop fits 100dvh (no deep page
+     scroll, per user directive); mobile grows naturally. Width widened
+     from 1080 → 1240px so the explorer grid breathes (user: "width bị
+     giới hạn"). Flex column: header (shrink-0) → state region (flex-1). */
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 24px 16px 48px;
+  padding: 0 var(--cs-space-page-x) var(--cs-space-6);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  min-height: 100dvh;
+  gap: var(--cs-space-4);
+}
+
+/* Viewport-height state region: fills the space under the header. */
+.app-shell main.region {
+  flex: 1;
+  min-height: 0;
 }
 
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--cs-z-sticky);
+  background: color-mix(in srgb, var(--cs-color-bg) 92%, transparent);
+  backdrop-filter: blur(6px);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: var(--cs-space-3);
+  padding: var(--cs-space-3) 0;
+  border-bottom: 1px solid var(--cs-color-border);
 }
 
 .app-header h1 {
+  font-family: var(--cs-font-display);
+  font-size: var(--cs-font-size-display);
+  font-weight: var(--cs-font-weight-semibold);
+  letter-spacing: -0.01em;
   margin: 0;
-  font-size: 1.5rem;
 }
 
 .processing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cs-space-1);
+  font-size: var(--cs-font-size-caption);
+  color: var(--cs-color-fg-muted);
   margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-muted);
 }
 
 /* ------------------------------------------------------------------ */
-/* Drop zone                                                           */
+/* Layout helpers (Tailwind-utility equivalents kept as CSS only where   */
+/* they encode layout policy shared across states, token-free colors)    */
 /* ------------------------------------------------------------------ */
 
-.drop-zone {
-  position: relative;
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius);
-  background: #ffffff;
-  padding: 36px 16px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.drop-zone-dragging {
-  border-color: var(--color-accent);
-  background: #eef4ff;
-}
-
-/*
- * The file input is an invisible full-zone overlay: click anywhere opens the
- * picker, Playwright setInputFiles still works on it (T6 e2e — it only needs
- * the element, not visibility), and drag & drop events bubble to the section.
- */
-.file-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.drop-zone-title {
-  margin: 0 0 4px;
-  font-weight: 600;
-}
-
-.drop-zone-hint {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-muted);
-}
-
-.drop-zone-invalid {
-  margin: 12px 0 0;
-  color: var(--color-error);
-  font-size: 0.9rem;
-}
-
-/* ------------------------------------------------------------------ */
-/* Stage checklist (PRD §61)                                           */
-/* ------------------------------------------------------------------ */
-
-.stage-checklist h2 {
-  margin: 0 0 10px;
-  font-size: 1.1rem;
-}
-
-.stage-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* Centered single-column view (idle hero/drop, analyzing stages, error):
+   fills the viewport height, scrolls internally only when the viewport
+   is too short — no deep page scroll on desktop (user directive). */
+.view-center {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.stage-item {
-  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: #ffffff;
+  justify-content: center;
+  gap: var(--cs-space-5);
+  padding: var(--cs-space-5) 0;
+  overflow-y: auto;
 }
 
-.stage-marker {
-  width: 1.1em;
-  text-align: center;
-}
-
-.stage-item.stage-done .stage-marker {
-  color: var(--color-done);
-}
-
-.stage-item.stage-current {
-  border-color: var(--color-accent);
-}
-
-.stage-item.stage-current .stage-marker {
-  color: var(--color-accent);
-}
-
-.stage-item.stage-pending {
-  color: var(--color-muted);
-}
-
-.stage-name {
-  margin-left: auto;
-  font-size: 0.8rem;
-  color: var(--color-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-/* ------------------------------------------------------------------ */
-/* Report summary (D024)                                               */
-/* ------------------------------------------------------------------ */
-
-.report-summary {
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-
-.report-summary h2 {
-  margin: 0 0 12px;
-  font-size: 1.1rem;
-}
-
-.severity-counts {
-  list-style: none;
-  margin: 0 0 12px;
-  padding: 0;
+/* Done region: toolbar (report+export) on top, explorer takes the rest,
+   overflow clipped on desktop so columns scroll internally. */
+.view-done {
+  flex: 1;
+  min-height: 0;
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--cs-space-4);
 }
 
-.severity-count {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: #f6f8fa;
-}
-
-.severity-count .severity-value {
-  font-weight: 700;
-}
-
-.severity-error .severity-value {
-  color: var(--color-error);
-}
-
-.severity-warning .severity-value {
-  color: var(--color-warning);
-}
-
-.severity-ambiguous .severity-value {
-  color: var(--color-ambiguous);
-}
-
-.severity-info .severity-value {
-  color: var(--color-info);
-}
-
-.report-meta {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-muted);
-}
-
-/* ------------------------------------------------------------------ */
-/* Explorer layout (R012)                                              */
-/* ------------------------------------------------------------------ */
-
-.explorer-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
-  gap: 20px;
-  align-items: start;
-}
-
-@media (max-width: 700px) {
-  .explorer-layout {
-    grid-template-columns: 1fr;
+@media (min-width: 768px) {
+  .view-done {
+    overflow: hidden;
   }
 }
 
-.doc-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-width: 0;
-}
-
 /* ------------------------------------------------------------------ */
-/* Issue explorer (severity groups)                                    */
+/* Motion (make-interfaces-feel-better: split + stagger enter ~100ms,   */
+/* fade+rise, interruptible — respects prefers-reduced-motion)          */
 /* ------------------------------------------------------------------ */
 
-.issue-explorer,
-.doc-view,
-.evidence-panel,
-.recovery-panel {
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-
-.issue-explorer h2,
-.doc-view h2,
-.evidence-panel h2,
-.recovery-panel h2 {
-  margin: 0 0 12px;
-  font-size: 1.1rem;
-}
-
-.issue-explorer-empty {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--color-muted);
-}
-
-.severity-group + .severity-group {
-  margin-top: 16px;
-}
-
-.severity-group-header {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin: 0 0 6px;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.severity-group-count {
-  font-weight: 700;
-}
-
-.severity-group.severity-error .severity-group-name,
-.severity-group.severity-error .severity-group-count {
-  color: var(--color-error);
-}
-
-.severity-group.severity-warning .severity-group-name,
-.severity-group.severity-warning .severity-group-count {
-  color: var(--color-warning);
-}
-
-.severity-group.severity-ambiguous .severity-group-name,
-.severity-group.severity-ambiguous .severity-group-count {
-  color: var(--color-ambiguous);
-}
-
-.severity-group.severity-info .severity-group-name,
-.severity-group.severity-info .severity-group-count {
-  color: var(--color-info);
-}
-
-.issue-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.issue-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  width: 100%;
-  text-align: left;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: #f6f8fa;
-  color: var(--color-text);
-  font: inherit;
-  cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease;
-}
-
-.issue-row:hover {
-  border-color: var(--color-accent);
-  background: #eef4ff;
-}
-
-.issue-row.issue-row-selected {
-  border-color: var(--color-accent);
-  background: #eef4ff;
-  box-shadow: 0 0 0 1px var(--color-accent);
-}
-
-.issue-row-id {
-  flex-shrink: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.75rem;
-  color: var(--color-muted);
-}
-
-.issue-row-message {
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-/* R013 resolved-row chip (UI-derived view, D034 — report.counts untouched) */
-.issue-row.issue-row-resolved {
-  border-color: var(--color-done);
-}
-
-.issue-row-resolved-chip {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.75rem;
-  color: var(--color-done);
-}
-
-/* R013 per-group resolved count in the header ("{n} resolved") — the header
-   uppercases its text (text-transform: uppercase); the resolved span resets
-   it so the e2e-pinned wording '{n} resolved' stays verbatim in rendered
-   text (innerText), not just textContent. */
-.severity-group-resolved {
-  margin-left: auto;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-done);
-  text-transform: none;
-}
-
-/* ------------------------------------------------------------------ */
-/* Document view (click-to-source, R009)                               */
-/* ------------------------------------------------------------------ */
-
-.doc-view-scroll {
-  max-height: 460px;
-  overflow-y: auto;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 4px 12px;
-  background: #fbfcfd;
-}
-
-.doc-block {
-  margin: 0;
-  padding: 10px 4px;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  border-bottom: 1px solid #eef1f4;
-}
-
-.doc-block:last-child {
-  border-bottom: none;
-}
-
-.doc-block.doc-block-highlighted {
-  background: #fffdf0;
-  border-radius: 4px;
-}
-
-/* Severity-tinted highlight mark (colors from the :root vars) */
-mark.source-highlight {
-  padding: 0 2px;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-mark.source-highlight.source-highlight-error {
-  background: #ffebe9;
-  color: var(--color-error);
-}
-
-mark.source-highlight.source-highlight-warning {
-  background: #fff8c5;
-  color: var(--color-warning);
-}
-
-mark.source-highlight.source-highlight-ambiguous {
-  background: #fff1e5;
-  color: var(--color-ambiguous);
-}
-
-mark.source-highlight.source-highlight-info {
-  background: #eaeef2;
-  color: var(--color-info);
-}
-
-.doc-view-empty {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--color-muted);
-}
-
-/* ------------------------------------------------------------------ */
-/* Evidence panel (R012)                                               */
-/* ------------------------------------------------------------------ */
-
-.evidence-issue {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 10px;
-  font-size: 0.85rem;
-}
-
-.evidence-issue-id {
-  flex-shrink: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.75rem;
-  color: var(--color-muted);
-}
-
-.evidence-list {
-  list-style: none;
-  margin: 0 0 14px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.evidence-item {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 8px;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: #f6f8fa;
-}
-
-.evidence-code {
-  grid-column: 1 / -1;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.72rem;
-  color: var(--color-accent);
-}
-
-.evidence-message {
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-.evidence-source {
-  grid-column: 1 / -1;
-  font-size: 0.75rem;
-  color: var(--color-muted);
-  font-style: italic;
-}
-
-.evidence-references-heading {
-  margin: 0 0 6px;
-  font-size: 0.9rem;
-}
-
-.reference-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.reference-entry {
-  padding: 6px 8px;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  border-left: 3px solid var(--color-border);
-}
-
-.evidence-empty-refs {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-muted);
-}
-
-/* ------------------------------------------------------------------ */
-/* Bibliography recovery panel (PRD §63 ask-user)                      */
-/* ------------------------------------------------------------------ */
-
-.recovery-explanation {
-  margin: 0 0 10px;
-  font-size: 0.85rem;
-  color: var(--color-muted);
-}
-
-.recovery-empty {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-muted);
-}
-
-.recovery-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.recovery-candidate {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: #f6f8fa;
-}
-
-.recovery-candidate-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.recovery-heading {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.recovery-type {
-  font-size: 0.75rem;
-  color: var(--color-muted);
-}
-
-.recovery-confidence {
-  font-size: 0.75rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  color: var(--color-muted);
-}
-
-.recovery-use {
-  flex-shrink: 0;
-  padding: 6px 12px;
-  border: 1px solid var(--color-accent);
-  border-radius: 6px;
-  background: #ffffff;
-  color: var(--color-accent);
-  font: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.recovery-use:hover {
-  background: var(--color-accent);
-  color: #ffffff;
-}
-
-/* ------------------------------------------------------------------ */
-/* Resolution picker (R013 manual ambiguity resolution — severity-tint) */
-/* ------------------------------------------------------------------ */
-
-.resolution-picker {
-  background: #ffffff;
-  border: 1px solid var(--color-ambiguous);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-
-.resolution-picker h2 {
-  margin: 0 0 6px;
-  font-size: 1.1rem;
-  color: var(--color-ambiguous);
-}
-
-.resolution-picker-hint {
-  margin: 0 0 10px;
-  font-size: 0.85rem;
-  color: var(--color-muted);
-}
-
-.resolution-candidates {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.resolution-candidate {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: #f6f8fa;
-}
-
-.resolution-candidate.resolution-candidate-chosen {
-  border-color: var(--color-ambiguous);
-  background: #fff1e5;
-}
-
-.resolution-candidate-label {
-  min-width: 0;
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-.resolution-choose {
-  flex-shrink: 0;
-  padding: 6px 12px;
-  border: 1px solid var(--color-ambiguous);
-  border-radius: 6px;
-  background: #ffffff;
-  color: var(--color-ambiguous);
-  font: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.resolution-choose:hover {
-  background: var(--color-ambiguous);
-  color: #ffffff;
-}
-
-.resolution-choose.resolution-choose-chosen {
-  background: var(--color-ambiguous);
-  color: #ffffff;
-}
-
-/* ------------------------------------------------------------------ */
-/* Error panel (R016)                                                  */
-/* ------------------------------------------------------------------ */
-
-.error-panel {
-  background: #ffffff;
-  border: 1px solid var(--color-error);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-}
-
-.error-panel strong {
-  color: var(--color-error);
-}
-
-.error-message {
-  display: block;
-  margin-top: 4px;
-  font-size: 0.9rem;
-}
-
-/* ------------------------------------------------------------------ */
-/* Export panel (R014/R008 — done state only, T4)                      */
-/* ------------------------------------------------------------------ */
-
-.export-panel {
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-
-.export-panel h2 {
-  margin: 0 0 12px;
-  font-size: 1.1rem;
-}
-
-.export-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.export-button {
-  appearance: none;
-  border: 1px solid var(--color-accent);
-  background: var(--color-accent);
-  color: #ffffff;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.export-button:hover {
-  background: #0d47d0;
-  border-color: #0d47d0;
-}
-
-.export-button:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+.onboarding-hero h2,
+.onboarding-hero p,
+.onboarding-hero li,
+.stage-item {
+  animation: cs-rise-in 0.28s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@keyframes cs-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-hero h2,
+  .onboarding-hero p,
+  .onboarding-hero li,
+  .stage-item {
+    animation: none;
+  }
 }

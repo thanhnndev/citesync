@@ -31,6 +31,7 @@
  */
 
 import type { AcademicDocument, CliReport, PipelineStage } from '@citesync/core';
+import type { I18nKey } from '../i18n/dictionary';
 
 // ---------------------------------------------------------------------------
 // Outgoing (app → worker).
@@ -189,4 +190,30 @@ const ERROR_DESCRIPTIONS: Readonly<Record<string, string>> = {
 /** Map a worker error name to user-facing text (fallback: generic). */
 export function describeWorkerError(name: string): string {
   return ERROR_DESCRIPTIONS[name] ?? `Unexpected error: ${name}`;
+}
+
+/**
+ * M005-S02-T3 — error guidance layer (i18n, render dưới describeWorkerError).
+ *
+ * Pure mapping err.name → i18n key. The describeWorkerError TEXT + err.name
+ * stay FROZEN EN (protocol contract — never i18n'd); guidance is a NEW
+ * i18n layer rendered BELOW the frozen message (UI-SPEC §3.3/§5.1). Five
+ * known names map to dedicated keys; anything unknown collapses to the
+ * generic key (total — never undefined).
+ */
+export function errorGuidanceKey(name: string): I18nKey {
+  switch (name) {
+    case 'NotADocxError':
+      return 'error.guidance.not-docx';
+    case 'ZipBombError':
+      return 'error.guidance.oversize';
+    case 'ParseFailureError':
+      return 'error.guidance.parse-failure';
+    case 'UnsupportedFormatError':
+      return 'error.guidance.unsupported';
+    case 'TimeBudgetExceededError':
+      return 'error.guidance.time-budget';
+    default:
+      return 'error.guidance.generic';
+  }
 }

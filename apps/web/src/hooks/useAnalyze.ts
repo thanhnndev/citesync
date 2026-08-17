@@ -65,6 +65,8 @@ export function useAnalyze(): {
   state: AnalyzeState;
   analyze: (bytes: ArrayBuffer, fileName: string, options?: AnalyzeOptions) => Promise<void>;
   rerun: (options?: AnalyzeOptions) => Promise<void>;
+  /** M005-S02-T4 no-deadflow reset: back to idle, drops the retained input. */
+  reset: () => void;
 } {
   const [state, setState] = useState<AnalyzeState>(INITIAL_STATE);
   // The live worker — `runAnalysis` terminates it on the terminal envelope,
@@ -135,5 +137,19 @@ export function useAnalyze(): {
     [analyze],
   );
 
-  return { state, analyze, rerun };
+  /**
+   * M005-S02-T4 — return to the idle shell (no-deadflow: a done/error user
+   * can always start over). Bumps the generation so an in-flight run's
+   * callbacks become no-ops, terminates the live worker, drops the
+   * retained input (must re-pick a file), and restores INITIAL_STATE.
+   */
+  const reset = useCallback((): void => {
+    generationRef.current += 1;
+    workerRef.current?.terminate();
+    workerRef.current = null;
+    lastInputRef.current = null;
+    setState(INITIAL_STATE);
+  }, []);
+
+  return { state, analyze, rerun, reset };
 }
