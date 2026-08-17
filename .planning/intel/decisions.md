@@ -1,0 +1,30 @@
+# Decisions — Synthesized from PRD + UI-SPEC
+
+## Locked Decisions (from PRD — highest doc precedence)
+
+1. **Offline-first architecture** — core parser MUST NOT depend on remote resources (PRD §11)
+2. **Deterministic-first** — same document + same version = same result; no generative models (PRD §65)
+3. **Privacy by default** — no document upload, no manuscript storage, no account, no cloud DB (PRD §10)
+4. **No LLM in core** — core engine MUST NOT use generative models (PRD §66)
+5. **DOCX-only v0.1** — PDF, Google Docs, Word plugin all excluded (PRD §12, §68)
+6. **MIT license** (PRD header)
+7. **CiteSync is a linter** — not an academic writing assistant (PRD §3)
+8. **Monorepo architecture** — apps/web + packages/core|docx|citations|references|matcher|rules|report|cli (PRD §47)
+9. **Core package independence** — @citesync/core has no React, Next.js, DOM, server, UI dependencies (PRD §46)
+10. **UI never parses documents directly** — always via core API (PRD §92)
+11. **Evidence never LLM-generated** (PRD §42)
+12. **Severity model: ERROR, WARNING, AMBIGUOUS, INFO** (PRD §38)
+13. **Citation families: author-date + numeric** (PRD §18–19)
+14. **Structured citation metadata > text heuristics** (PRD §22)
+15. **Bibliography detection returns confidence; never silently guesses** (PRD §17)
+
+## UI Decisions (from UI-SPEC — overrides PRD §94)
+
+16. **Tailwind CSS v4** (CSS-first @theme) — replaces PRD §94 vanilla CSS directive (UI-SPEC §7.3, SPEC > PRD)
+17. **Hand-rolled typed i18n dictionary** (EN–VI) — no i18next (UI-SPEC §7.1)
+18. **FROZEN data-testid contract** — 23 patterns, 5 e2e specs (UI-SPEC §7.2)
+19. **Design tokens as CSS custom properties** on :root (UI-SPEC §1)
+20. **Desktop-first responsive** — 4 breakpoints (UI-SPEC §2.1)
+21. **State machine in App.tsx** — status string, no library (UI-SPEC §7.3)
+22. **Evidence/issue text EN FROZEN** — never translated (UI-SPEC §7.1)
+23. **Stage labels EN literal** — engine→UI contract (UI-SPEC §7.1)

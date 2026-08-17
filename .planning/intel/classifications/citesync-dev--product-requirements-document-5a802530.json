@@ -1,0 +1,13 @@
+{
+  "source_path": "docs/CiteSync.dev — Product Requirements Document.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "CiteSync.dev — Product Requirements Document",
+  "summary": "Product requirements for CiteSync, an offline-first citation consistency linter for DOCX academic documents. Checks citations against bibliography, surfaces missing/unused/ambiguous references with evidence.",
+  "scope": ["CiteSync", "citation linter", "DOCX", "offline-first", "academic documents", "bibliography", "citations", "Web Worker", "PWA", "CLI", "monorepo"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}
